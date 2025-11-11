@@ -27,6 +27,7 @@ var list = {
 			"Lights & Shadows":  {
 				"Types of lights": "html/lightingTypesInfo",
 				"Spotlight in Details": "html/lightingSpotlightDetailsInfo",				
+				"Light following object": "html/lightFollowObjInfo",            
 				"Shadow Map Types":"html/shadowMapTypesInfo",			
 				"Shadow Map Viewer":"html/shadowMapViewerInfo",
 				"Shadow Update":"html/shadowUpdateInfo",				
