@@ -12,7 +12,7 @@ let scene, renderer, camera, material, light, orbit;; // Initial variables
 scene = new THREE.Scene();    // Create main scene
 renderer = initRenderer();    // Init a basic renderer
 camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
-material = setDefaultMaterial(); // create a basic material
+material = setDefaultMaterial('rgb(196, 141, 21)'); // create a basic material
 light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
@@ -31,9 +31,18 @@ scene.add(plane);
 let cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
 let cube = new THREE.Mesh(cubeGeometry, material);
 // position the cube
-cube.position.set(0.0, 2.0, 0.0);
+cube.position.set(-8.0, 2.0, 0.0);
 // add the cube to the scene
 scene.add(cube);
+
+for (let i = 0; i < 3; i++) {
+  for (let j = 0; j < 3; j++) {
+    let cube = new THREE.Mesh(cubeGeometry, material);
+    cube.position.set(-8.0 + i*8, 2.0, -8.0 + j*8);
+    scene.add(cube);
+  }
+}
+
 
 // Use this to show information onscreen
 let controls = new InfoBox();
