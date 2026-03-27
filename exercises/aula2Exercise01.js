@@ -28,19 +28,24 @@ let plane = createGroundPlaneXZ(20, 20)
 scene.add(plane);
 
 // create a cube
-let cubeGeometry1 = new THREE.BoxGeometry(4, 4, 4);
-let cube1 = new THREE.Mesh(cubeGeometry1, material);
-let cubeGeometry2 = new THREE.BoxGeometry(2, 2, 2);
-let cube2 = new THREE.Mesh(cubeGeometry2, material);
-let cubeGeometry3 = new THREE.BoxGeometry(1, 1, 1);
-let cube3 = new THREE.Mesh(cubeGeometry3, material);
+let tableGeometry = new THREE.BoxGeometry(11, 0.3, 6);
+let table1 = new THREE.Mesh(tableGeometry, material);
+let cylinderGeometry = new THREE.CylinderGeometry(0.2, 0.2, 3, 32);
 
-// position the cubes
-cube1.position.set(0.0, 2.0, 0.0);
-cube2.position.set(-4.0, 1.0, 5.0);
-cube3.position.set(8.0, 0.5, 0.0);
+for (let i = 0; i < 2; i++) {
+  for (let j = 0; j < 2; j++) {
+    let pe = new THREE.Mesh(cylinderGeometry, material);
+    pe.translateY(-1.5);
+    pe.translateX(-5.2 + i*10.2);
+    pe.translateZ(-2.5 + j*5);
+    table1.add(pe);
+  }
+}
+
+
 // add the cubes to the scene
-scene.add(cube1, cube2, cube3);
+table1.translateY(2.9);
+scene.add(table1);
 
 // Use this to show information onscreen
 let controls = new InfoBox();
