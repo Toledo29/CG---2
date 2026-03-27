@@ -30,18 +30,14 @@ let plane = createGroundPlaneXZ(20, 20)
 scene.add(plane);
 
 // create
-let cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
-let cube = new THREE.Mesh(cubeGeometry, material3);
-let sphereGeometry = new THREE.SphereGeometry(2, 32, 16);
-let sphere = new THREE.Mesh(sphereGeometry, material2);
-let cylinderGeometry = new THREE.CylinderGeometry(3, 3, 10, 32);
-let cylinder = new THREE.Mesh(cylinderGeometry, material);
-// position
-cube.position.set(0.0, 2.0, 0.0);
-sphere.position.set(6.0, 2.0, 0.0);
-cylinder.position.set(-6.0, 2.5, 0.0);
-// add to the scene
-scene.add(cube, sphere, cylinder);
+let sphereGeometry = new THREE.SphereGeometry(0.5, 32, 16);
+for (let i = 0; i < 12; i++) {
+  let sphere = new THREE.Mesh(sphereGeometry, material);
+  let angle = i * (Math.PI / 6); // 30 degrees in radians
+  let radius = 8;
+  sphere.position.set(radius * Math.cos(angle), 0.5, radius * Math.sin(angle));
+  scene.add(sphere);
+}
 
 // Use this to show information onscreen
 let controls = new InfoBox();
