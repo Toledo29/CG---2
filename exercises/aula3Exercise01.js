@@ -7,7 +7,7 @@ import {initRenderer,
         InfoBox,
         onWindowResize,
         createGroundPlaneXZ} from "../libs/util/util.js";
-
+import GUI from '../libs/util/dat.gui.module.js'
 let scene, renderer, camera, material, light, orbit;; // Initial variables
 scene = new THREE.Scene();    // Create main scene
 renderer = initRenderer();    // Init a basic renderer
@@ -23,6 +23,17 @@ window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)},
 let axesHelper = new THREE.AxesHelper( 12 );
 scene.add( axesHelper );
 
+const lerpConfig1 = {
+  destination: new THREE.Vector3(8, 1, -4),
+  alpha: 0.02,
+  move:false
+}
+const lerpConfig2 = {
+  destination: new THREE.Vector3(8, 1, 4),
+  alpha: 0.01,
+  move:false
+};
+
 // create the ground plane
 let plane = createGroundPlaneXZ(20, 20)
 scene.add(plane);
@@ -36,22 +47,36 @@ sphere2.position.set(-8, 1, 4);
 scene.add(sphere1, sphere2);
 
 
+function buildInterface(){
 
-// Use this to show information onscreen
-let controls = new InfoBox();
-  controls.add("Basic Scene");
-  controls.addParagraph();
-  controls.add("Use mouse to interact:");
-  controls.add("* Left button to rotate");
-  controls.add("* Right button to translate (pan)");
-  controls.add("* Scroll to zoom in/out.");
-  controls.show();
-  controls.add("Esfera 1")
-  controls.add("Esfera 2")
-  controls.add("Reset")
+  var controls = new function() {
+    this.moverEsfera1 = function() {
+      lerpConfig1.move = true;
+    }
+    this.moverEsfera2 = function() {
+      lerpConfig2.move = true;
+    }
+    this.resetPosition = function() {
+      sphere1.position.set(-8, 1, -4);
+      sphere2.position.set(-8, 1, 4);
+      lerpConfig1.move = false;
+      lerpConfig2.move = false;
+    }
+  }
+  // GUI interface
+  let gui = new GUI();
+  gui.add(controls, 'moverEsfera1').name("Mover Esfera 1");
+  gui.add(controls, 'moverEsfera2').name("Mover Esfera 2");
+  gui.add(controls, 'resetPosition').name("Reset");
+}
+
+buildInterface();
 render();
+
 function render()
 {
+  if(lerpConfig1.move) sphere1.position.lerp(lerpConfig1.destination, lerpConfig1.alpha);
+  if(lerpConfig2.move) sphere2.position.lerp(lerpConfig2.destination, lerpConfig2.alpha);
   requestAnimationFrame(render);
   renderer.render(scene, camera) // Render scene
 }
