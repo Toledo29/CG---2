@@ -1,139 +1,145 @@
 import * as THREE from  'three';
-import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
-import KeyboardState from '../libs/util/KeyboardState.js';
+import Stats from '../build/jsm/libs/stats.module.js';
+import GUI from '../libs/util/dat.gui.module.js';
+import {TrackballControls} from '../build/jsm/controls/TrackballControls.js';
 import {initRenderer, 
-        initCamera,
-        initDefaultBasicLight,
-        setDefaultMaterial,
-        InfoBox,
-        SecondaryBox,        
+        initCamera, 
         onWindowResize, 
-        createGroundPlaneXZ} from "../libs/util/util.js";
+        initDefaultBasicLight} from "../libs/util/util.js";
 
-let scene, renderer, camera, material, material2, light, orbit;; // Initial variables
-scene = new THREE.Scene();    // Create main scene
-renderer = initRenderer();    // Init a basic renderer
-camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
-material = setDefaultMaterial(); // create a basic material
-material2 = setDefaultMaterial("rgb(255,200,0)");
-light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
-orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
+        
+var scene = new THREE.Scene();    // Create main scene
+var stats = new Stats();          // To show FPS information
+var renderer = initRenderer();    // View function in util/utils
+var camera = initCamera(new THREE.Vector3(7, 7, 7)); // Init camera in this position
+var trackballControls = new TrackballControls( camera, renderer.domElement );
+initDefaultBasicLight(scene);
 
-let shootBall = false;
+// Set angles of rotation
+let angle = [-1.57, 0];
+
+// Show world axes
+var axesHelper = new THREE.AxesHelper( 12 );
+scene.add( axesHelper );
+
+var s1 = createSphere();
+scene.add(s1);
+
+var c1 = createCylinder();
+s1.add(c1);
+
+var s2 = createSphere();
+c1.add(s2);
+
+var c2 = createCylinder();
+s2.add(c2);
+
+var s3 = createSphere();
+c2.add(s3);
+
+var c3 = createCylinder();
+s3.add(c3);
 
 // Listen window size changes
 window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
 
-// Use to scale the cube
-var scale = 1.0;
-
-// Show text information onscreen
-showInformation();
-
-// To use the keyboard
-var keyboard = new KeyboardState();
-
-// Show axes (parameter is size of each axis)
-var axesHelper = new THREE.AxesHelper( 12 );
-scene.add( axesHelper );
-
-// create the ground plane
-let plane = createGroundPlaneXZ(20, 20)
-scene.add(plane);
-
-// create a cube
-var cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
-var cube = new THREE.Mesh(cubeGeometry, material);
-// position the cube
-cube.position.set(0.0, 2.0, 0.0);
-// add the cube to the scene
-scene.add(cube);
-
-var n = 0;
-const spheres = [];
-var sphGeo = new THREE.SphereGeometry(1, 20, 20);
-var sphere = new THREE.Mesh(sphGeo, material2);
-   sphere.position.set(0, 0, 3);
-cube.add(sphere);
-spheres.push(sphere);
-
-var cubeAxesHelper = new THREE.AxesHelper(9);
-cube.add(cubeAxesHelper);
-
-var positionMessage = new SecondaryBox("");
-positionMessage.changeStyle("rgba(0,0,0,0)", "lightgray", "16px", "ubuntu")
+buildInterface();
 render();
 
+function createSphere()
+{
+  var sphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+  var sphereMaterial = new THREE.MeshPhongMaterial( {color:'rgb(180,180,255)',     shininess:"15",            // Shininess of the object
+  specular:"rgb(180,180,255)"
+} );
+  var sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+  return sphere;
+}
 
-//-------------------------------------------------------------------------------
+function createCylinder()
+{
+  var cylinderGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2.0, 25);
+  var cylinderMaterial = new THREE.MeshLambertMaterial({color:'rgb(100,255,100)'});            
+    //specular:"rgb(100,255,100)"} );
+  var cylinder = new THREE.Mesh( cylinderGeometry, cylinderMaterial );
+  return cylinder;
+}
+
+
+function rotateCylinder()
+{
+  // More info:
+  // https://threejs.org/docs/#manual/en/introduction/Matrix-transformations
+  c1.matrixAutoUpdate = false;
+  s2.matrixAutoUpdate = false;
+  c2.matrixAutoUpdate = false;
+  s3.matrixAutoUpdate = false;
+  c3.matrixAutoUpdate = false;
+
+  // resetting matrices
+  c1.matrix.identity();
+  s2.matrix.identity();
+  c2.matrix.identity();
+  s3.matrix.identity();
+  c3.matrix.identity();
+
+  // Auxiliar matrix
+  var mat4 = new THREE.Matrix4();
+
+  // Will execute T1 and then R1
+  c1.matrix.multiply(mat4.makeRotationZ(angle[0])); // R1
+  c1.matrix.multiply(mat4.makeTranslation(0.0, 1.0, 0.0)); // T1
+  
+  // Just need to translate the sphere to the right position
+  s2.matrix.multiply(mat4.makeTranslation(0.0, 1.0, 0.0));
+
+  // Will execute T2 and then R2
+  c2.matrix.multiply(mat4.makeRotationZ(angle[1])); // R2
+  c2.matrix.multiply(mat4.makeTranslation(0.0, 1.0, 0.0)); // T2
+
+  // Just need to translate the sphere to the right position
+  s3.matrix.multiply(mat4.makeTranslation(0.0, 1.0, 0.0));
+
+  // Will execute T2 and then R2
+  c3.matrix.multiply(mat4.makeRotationZ(angle[2])); // R2
+  c3.matrix.multiply(mat4.makeTranslation(0.0, 1.0, 0.0)); // T2
+}
+
+function buildInterface()
+{
+  var controls = new function ()
+  {
+    this.joint1 = 270;
+    this.joint2 = 0;
+    this.joint3 = 0;
+
+    this.rotate = function(){
+      angle[0] = THREE.MathUtils.degToRad(this.joint1);
+      angle[1] = THREE.MathUtils.degToRad(this.joint2);
+      angle[2] = THREE.MathUtils.degToRad(this.joint3);
+
+      rotateCylinder();
+    };
+  };
+
+  // GUI interface
+  var gui = new GUI();
+  gui.add(controls, 'joint1', 0, 360)
+    .onChange(function() { controls.rotate() })
+    .name("First Joint");
+  gui.add(controls, 'joint2', 0, 360)
+    .onChange(function() { controls.rotate() })
+    .name("Second Joint");
+  gui.add(controls, 'joint3', 0, 360)
+    .onChange(function() { controls.rotate() })
+    .name("Third Joint");
+}
+
 function render()
 {
-   if (shootBall) {
-      spheres[n].translateZ(0.05);
-      for(let i = 0; i < n; i++) {
-          spheres[i].translateZ(0.05);
-      }
-   }
-   else{
-    for(let i = 0; i < n; i++) {
-        spheres[i].translateZ(0.05);
-    }
-   }
-
-   keyboardUpdate();
-   requestAnimationFrame(render); // Show events
-   renderer.render(scene, camera) // Render scene
+  stats.update(); // Update FPS
+  trackballControls.update();
+  rotateCylinder();
+  requestAnimationFrame(render); // Show events
+  renderer.render(scene, camera) // Render scene
 }
-
-//-- Aux functions --------------------------------------------------------------
-function keyboardUpdate() 
-{
-   keyboard.update();
-   let angle = THREE.MathUtils.degToRad(5); 
-   if ( keyboard.pressed("left") )  cube.rotateY(  angle );
-   if ( keyboard.pressed("right") )  cube.rotateY( -angle );
-   if ( keyboard.pressed("up") )   cube.translateZ(  1 );
-   if ( keyboard.pressed("down") ) cube.translateZ( -1 );
-
-   if ( keyboard.down("space") ) 
-   {
-      if(!shootBall)
-      {
-         shootBall = true;
-         scene.attach(spheres[n]);
-      }
-      else{
-          shootBall = false;
-          var sphere = new THREE.Mesh(sphGeo, material2);
-          sphere.position.set(0, 0, 3);
-          cube.add(sphere);
-          spheres.push(sphere);
-          n++;
-      }
-   }
-   updatePositionMessage();
-}
-
-function updatePositionMessage()
-{
-   let wp = new THREE.Vector3(); 
-   spheres[n].getWorldPosition( wp );
-
-   var str =  "Sphere Position: Local Space {" + spheres[n].position.x.toFixed(1) + ", " + spheres[n].position.y.toFixed(1) + ", " + spheres[n].position.z.toFixed(1) + "} " + 
-             "| World Space {" + wp.x.toFixed(1) + ", " + wp.y.toFixed(1) + ", " + wp.z.toFixed(1) + "}";
-   positionMessage.changeMessage(str);
-}
-
-
-function showInformation()
-{
-  // Use this to show information onscreen
-  var controls = new InfoBox();
-    controls.add("Animation - Attach");
-    controls.addParagraph();
-    controls.add("Use keyboard arrows to rotate/move the cube.");
-    controls.add("Press 'space' to shoot the ball");
-    controls.show();
-}
-
-

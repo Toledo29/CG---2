@@ -7,12 +7,14 @@ import {initRenderer,
         InfoBox,
         onWindowResize,
         createGroundPlaneXZ} from "../libs/util/util.js";
-import GUI from '../libs/util/dat.gui.module.js'
+
 let scene, renderer, camera, material, light, orbit;; // Initial variables
 scene = new THREE.Scene();    // Create main scene
 renderer = initRenderer();    // Init a basic renderer
 camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
-material = setDefaultMaterial(); // create a basic material
+material = setDefaultMaterial("darkred"); // create a basic material
+let material2 = setDefaultMaterial("cyan"); // create a basic material with a different color
+let material3 = setDefaultMaterial("lightgreen"); // create a basic material with a different color
 light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
@@ -23,67 +25,33 @@ window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)},
 let axesHelper = new THREE.AxesHelper( 12 );
 scene.add( axesHelper );
 
-let speed1 = 0.08;
-let speed2 = 0.05;
-
-let move1 = false;
-let move2 = false;
-
-function moveSphere1() {
-  if(sphere1.position.x < 8) {
-    sphere1.position.x += speed1;
-  }
-}
-
-function moveSphere2() {
-  if(sphere2.position.x < 8) {
-    sphere2.position.x += speed2;
-  }
-}
-
 // create the ground plane
 let plane = createGroundPlaneXZ(20, 20)
 scene.add(plane);
 
-let sphereGeometry = new THREE.SphereGeometry(1, 32, 16);
-let sphere1 = new THREE.Mesh(sphereGeometry, material);
-sphere1.position.set(-8, 1, -4);
-let sphere2 = new THREE.Mesh(sphereGeometry, material);
-sphere2.position.set(-8, 1, 4);
-
-scene.add(sphere1, sphere2);
-
-
-function buildInterface(){
-
-  var controls = new function() {
-    this.moverEsfera1 = function() {
-      move1 = true;
-    }
-    this.moverEsfera2 = function() {
-      move2 = true;
-    }
-    this.resetPosition = function() {
-      sphere1.position.set(-8, 1, -4);
-      sphere2.position.set(-8, 1, 4);
-      move1 = false;
-      move2 = false;
-    }
-  }
-  // GUI interface
-  let gui = new GUI();
-  gui.add(controls, 'moverEsfera1').name("Mover Esfera 1");
-  gui.add(controls, 'moverEsfera2').name("Mover Esfera 2");
-  gui.add(controls, 'resetPosition').name("Reset");
+// create
+let sphereGeometry = new THREE.SphereGeometry(0.5, 32, 16);
+for (let i = 0; i < 12; i++) {
+  let sphere = new THREE.Mesh(sphereGeometry, material);
+  let angle = i * (Math.PI / 6); // 30 degrees in radians
+  let radius = 8;
+  sphere.position.set(radius * Math.cos(angle), 0.5, radius * Math.sin(angle));
+  scene.add(sphere);
 }
 
-buildInterface();
-render();
+// Use this to show information onscreen
+let controls = new InfoBox();
+  controls.add("Basic Scene");
+  controls.addParagraph();
+  controls.add("Use mouse to interact:");
+  controls.add("* Left button to rotate");
+  controls.add("* Right button to translate (pan)");
+  controls.add("* Scroll to zoom in/out.");
+  controls.show();
 
+render();
 function render()
 {
-  if(move1) moveSphere1();
-  if(move2) moveSphere2();
   requestAnimationFrame(render);
   renderer.render(scene, camera) // Render scene
 }
