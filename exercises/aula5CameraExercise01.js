@@ -41,6 +41,9 @@ function updateCamera()
 
    message.changeMessage("Pos: {" + camPos.x + ", " + camPos.y + ", " + camPos.z + "} " + 
                          "/ LookAt: {" + camLook.x + ", " + camLook.y + ", " + camLook.z + "}");
+   camera.position.copy(camPos);
+   camera.up.copy( camUp );
+   camera.lookAt(camLook);
 }
 
 function keyboardUpdate() {
@@ -48,6 +51,19 @@ function keyboardUpdate() {
    keyboard.update();
    
    // DICA: Insira aqui seu código para mover a câmera
+   keyboard.pressed("pageup") ? camPos.y += 0.1 : null;
+   keyboard.pressed("pagedown") ? camPos.y -= 0.1 : null;
+   keyboard.pressed("left") ? camPos.x -= 0.1 : null;
+   keyboard.pressed("right") ? camPos.x += 0.1 : null;
+   keyboard.pressed("up") ? camPos.z -= 0.1 : null;
+   keyboard.pressed("down") ? camPos.z += 0.1 : null;
+
+   keyboard.pressed("A") ? camLook.x -= 0.1 : null;
+   keyboard.pressed("D") ? camLook.x += 0.1 : null;
+   keyboard.pressed("W") ? camLook.z -= 0.1 : null;
+   keyboard.pressed("S") ? camLook.z += 0.1 : null;
+   keyboard.pressed("Q") ? camLook.y += 0.1 : null;
+   keyboard.pressed("E") ? camLook.y -= 0.1 : null;
    
    updateCamera();
 }
