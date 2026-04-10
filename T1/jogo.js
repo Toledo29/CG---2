@@ -37,6 +37,13 @@ let coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 32);
 let coneLeafGeometry2 = new THREE.ConeGeometry(1.5, 2, 32);
 let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 32);
 
+let airPlaneGeometry = new THREE.BoxGeometry(1, 0.5, 1);
+let airPlaneMaterial = setDefaultMaterial('red');
+let airPlane = new THREE.Mesh(airPlaneGeometry, airPlaneMaterial);
+airPlane.position.set(0, 11.5, -30);
+scene.add(airPlane);
+let groundCurrentCenter = new THREE.Vector3(0, 0, 0);
+
 // cria componentes da árvore e posiciona eles
 for(let i = 0; i < 12; i++){
   for(let j = 0; j < 10; j++){
@@ -72,5 +79,6 @@ render();
 function render()
 {
   requestAnimationFrame(render);
+  airPlane.position.z += 0.1;
   renderer.render(scene, camera) // Render scene
 }
