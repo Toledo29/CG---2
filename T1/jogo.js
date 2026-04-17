@@ -14,7 +14,11 @@ renderer = initRenderer();    // Init a basic renderer
 camera = initCamera(new THREE.Vector3(0, 11, -90)); // Init camera in this position
 camera.lookAt(0, 11, 0);
 light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
-// orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
+
+camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+   camera.position.set(0.0, 11, -90.0);
+   camera.up.set( 0.0, 1.0, 0.0 );
+   camera.lookAt(0.0, 11, 0.0);
 
 // cria os materiais para os objetos
 let material1 = setDefaultMaterial('rgb(139, 69, 19)');
@@ -44,8 +48,9 @@ let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 32);
 let airPlaneGeometry = new THREE.BoxGeometry(1, 0.5, 1);
 let airPlaneMaterial = setDefaultMaterial('red');
 let airPlane = new THREE.Mesh(airPlaneGeometry, airPlaneMaterial);
-airPlane.position.set(0, 11.5, -30);
+airPlane.position.set(0, 11.5, -70);
 scene.add(airPlane);
+const cameraFollowZOffset = -20;
 let groundCurrentCenter = new THREE.Vector3(0, 0, 0);
 
 // cria e posiciona árvores em pontos aleatórios com distância mínima entre elas
@@ -125,6 +130,8 @@ render();
 function render()
 {
   requestAnimationFrame(render);
-  airPlane.position.z += 0.1;
+  airPlane.position.z += 0.5;
+  camera.position.z = airPlane.position.z + cameraFollowZOffset;
+  camera.lookAt(airPlane.position.x, airPlane.position.y, airPlane.position.z);
   renderer.render(scene, camera) // Render scene
 }
