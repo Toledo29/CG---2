@@ -49,11 +49,7 @@ let coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 32);
 let coneLeafGeometry2 = new THREE.ConeGeometry(1.5, 2, 32);
 let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 32);
 
-let airPlaneGeometry = new THREE.BoxGeometry(1, 0.5, 1);
-let airPlaneMaterial = setDefaultMaterial('red');
-let airPlane = new THREE.Mesh(airPlaneGeometry, airPlaneMaterial);
-airPlane.position.set(0, 11.5, -70);
-scene.add(airPlane);
+// Retângulo vermelho removido - substituído pelo avião 3D
 const cameraFollowZOffset = -20;
 let groundCurrentCenter = new THREE.Vector3(0, 0, 0);
 
@@ -303,7 +299,7 @@ helice.position.set(2.7, 0, 0);
 aviao.add(helice);
 
 aviao.scale.set(1, 1, 1);
-aviao.position.set(0, 5, 0);
+aviao.position.set(0, 11.5, -70);
 aviao.rotation.y = 3 * (Math.PI / 2);
 scene.add(aviao);
 
@@ -311,8 +307,12 @@ render();
 function render()
 {
   requestAnimationFrame(render);
-  airPlane.position.z += 0.5;
-  camera.position.z = airPlane.position.z + cameraFollowZOffset;
-  camera.lookAt(airPlane.position.x, airPlane.position.y, airPlane.position.z);
+  aviao.position.z += 0.5;
+  camera.position.z = aviao.position.z + cameraFollowZOffset;
+  camera.lookAt(aviao.position.x, aviao.position.y, aviao.position.z);
+  
+  // faz a hélice rodar no próprio eixo
+  helice.rotation.x += 0.1;
+  
   renderer.render(scene, camera) // Render scene
 }
