@@ -202,9 +202,50 @@ cabine.add(cabineBorda1);
 cabine.add(cabineBorda2);
 aviao.add(cabine);
 
-aviao.position.set(0, 5, 0);
-scene.add(aviao);
 
+// cria nariz do avião
+let narizGeo = new THREE.SphereGeometry( 0.6, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2 );
+let nariz = new THREE.Mesh(narizGeo, corpoMat);
+nariz.position.set(2.0, 0, 0);
+nariz.rotation.z = -Math.PI / 2;
+aviao.add(nariz);
+
+// cria helice com 3 pás 
+let helice = new THREE.Group();
+
+// material da hélice
+let heliceMat = new THREE.MeshStandardMaterial({
+    color: 0xe65729,
+    metalness: 0.7,
+    roughness: 0.2
+});
+
+// cria as 3 pás da hélice
+for(let i = 0; i < 3; i++) {
+    let paGeo = new THREE.BoxGeometry(0.1, 1.5, 0.03);
+    let pa = new THREE.Mesh(paGeo, heliceMat);
+    pa.position.set(0, 0, 0);
+    
+    // rotaciona cada pá 120 graus (2π/3 radianos)
+    pa.rotation.x = (i * Math.PI * 2) / 3;
+    
+    helice.add(pa);
+}
+
+// cria o núcleo central da hélice
+let nucleoGeo = new THREE.CapsuleGeometry(0.12, 0.12, 4, 8, 1);
+let nucleo = new THREE.Mesh(nucleoGeo, heliceMat);
+nucleo.rotation.z = Math.PI / 2;
+helice.add(nucleo);
+
+// posiciona a hélice na ponta do nariz
+helice.position.set(2.7, 0, 0);
+aviao.add(helice);
+
+aviao.scale.set(1, 1, 1);
+aviao.position.set(0, 5, 0);
+aviao.rotation.y = 3 * (Math.PI / 2);
+scene.add(aviao);
 
 render();
 function render()
