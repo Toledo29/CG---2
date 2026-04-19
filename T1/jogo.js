@@ -45,7 +45,7 @@ const halfPlaneWidth = planeWidth / 2;
 const halfPlaneDepth = planeDepth / 2;
 
 // cria geometria dos componentes da árvore
-let logGeometry1 = new THREE.CylinderGeometry(0.3, 0.3, 3, 5);
+let logGeometry1 = new THREE.CylinderGeometry(0.3, 0.3, 4, 5);
 let logGeometry2 = new THREE.CylinderGeometry(0.3, 0.3, 3, 5);
 let sphereLeafGeometry1 = new THREE.SphereGeometry(1.3, 32, 5);
 let coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 5);
@@ -68,7 +68,7 @@ corpo.rotation.x = -Math.PI / 2;
 aviao.add(corpo);
 
 // cria asa adireita do avião 
-let asaGeoDireita = new THREE.CylinderGeometry( 0.3, 0.5, 4, 32 );
+let asaGeoDireita = new THREE.CylinderGeometry( 0.3, 0.5, 4, 10 );
 let asaMat = new THREE.MeshStandardMaterial({
     color: 0xffa500, 
     metalness: 0.1,  
@@ -82,7 +82,7 @@ asaDireita.position.x = -2;
 asaDireita.position.z = 0.5;
 aviao.add(asaDireita);
 
-let pontaGeoDIreita = new THREE.SphereGeometry(0.3, 32, 16);
+let pontaGeoDIreita = new THREE.SphereGeometry(0.3, 32, 10);
 let pontaDireita = new THREE.Mesh(pontaGeoDIreita, asaMat);
 pontaDireita.position.set(4, 0, 0.5); 
 pontaDireita.rotation.z = Math.PI / 2;
@@ -91,7 +91,7 @@ pontaDireita.scale.set(0.2, 1, 0.6);
 aviao.add(pontaDireita);
 
 // cria asa esqueda do avião 
-let asaGeoEsquerda = new THREE.CylinderGeometry( 0.5, 0.3, 4, 32 );
+let asaGeoEsquerda = new THREE.CylinderGeometry( 0.5, 0.3, 4, 10 );
 let asaEsquerda = new THREE.Mesh(asaGeoEsquerda, asaMat);
 asaEsquerda.rotation.x = -Math.PI / 2;
 asaEsquerda.rotation.z = Math.PI / 2;
@@ -100,7 +100,7 @@ asaEsquerda.position.x = 2;
 asaEsquerda.position.z = 0.5;
 aviao.add(asaEsquerda);
 
-let pontaGeoEsquerda = new THREE.SphereGeometry(0.3, 32, 16);
+let pontaGeoEsquerda = new THREE.SphereGeometry(0.3, 32, 10);
 let pontaEsquerda = new THREE.Mesh(pontaGeoEsquerda, asaMat);
 pontaEsquerda.position.set(-4, 0, 0.5);
 pontaEsquerda.rotation.z = Math.PI / 2 ; 
@@ -235,7 +235,7 @@ helice.add(nucleo);
 helice.position.set(0, 0, 2.7);
 aviao.add(helice);
 
-aviao.scale.set(2, 2, 2);
+aviao.scale.set(1, 1, 1);
 aviao.position.set(0, 11.5, -70);
 // aviao.rotation.x = Math.PI;
 scene.add(aviao);
@@ -350,7 +350,7 @@ function createChunk(chunkIndex){
       tree = new THREE.Mesh(logGeometry1, material1);
       let sphereleaf = new THREE.Mesh(sphereLeafGeometry1, material2);
       tree.add(sphereleaf);
-      sphereleaf.position.set(0, 1.5, 0);
+      sphereleaf.position.set(0, 2, 0);
     } else {
       tree = new THREE.Mesh(logGeometry2, material1);
       let coneleaf1 = new THREE.Mesh(coneLeafGeometry1, material3);
@@ -423,15 +423,23 @@ function render()
   const maxRollZ = THREE.MathUtils.degToRad(45);
   const lateralResponse = 8.0;
 
+  const cameraXOffset = 0.6;
+  const cameraYOffset = 0.8;
+
   aviao.position.z += 0.4;
   cameraTarget.position.z = aviao.position.z;
+  // cameraTarget.position.y = aviao.position.y - (aviao.position.y*cameraYOffset);
+  cameraTarget.position.x = aviao.position.x - (aviao.position.x*cameraXOffset);
+
   camera.position.z = cameraTarget.position.z + cameraFollowZOffset;
+  // camera.position.y = cameraTarget.position.y +11;
+  camera.position.x = cameraTarget.position.x;
   camera.lookAt(cameraTarget.position.x, cameraTarget.position.y, cameraTarget.position.z);
   camera.updateMatrixWorld();
 
   const mouseWorld = getWorldPointAtZPlane(mouseNDC.x, mouseNDC.y, aviao.position.z);
   const bounds = getScreenBoundsAtZPlane(aviao.position.z);
-  const screenMargin = 1.0;
+  const screenMargin = 4.0;
 
   const targetX = THREE.MathUtils.clamp(mouseWorld.x, bounds.minX + screenMargin, bounds.maxX - screenMargin);
   const targetY = THREE.MathUtils.clamp(mouseWorld.y, bounds.minY + screenMargin, bounds.maxY - screenMargin);
