@@ -232,6 +232,11 @@ aviao.position.set(0, 11.5, -70);
 aviao.rotation.y = 3 * (Math.PI / 2);
 scene.add(aviao);
 
+// alvo invisivel para camera (x/y fixos e z seguindo o aviao)
+const cameraTarget = new THREE.Object3D();
+cameraTarget.position.set(0, 11.5, aviao.position.z);
+scene.add(cameraTarget);
+
 // configura variáveis para controle de geração dos chunks
 const cameraFollowZOffset = -20;
 const treeCountPerChunk = 400;
@@ -244,6 +249,46 @@ const maxPlacementAttempts = 10000;
 const chunks = new Map();
 const chunksAhead = 4;
 const chunksBehind = 1;
+
+// mapeamento do mouse para movimentação do avião em X/Y
+const mouseNDC = new THREE.Vector2(0, 0);
+const tempVector = new THREE.Vector3();
+
+window.addEventListener('mousemove', function(event){
+  mouseNDC.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouseNDC.y = -((event.clientY / window.innerHeight) * 2 - 1);
+});
+
+function getWorldPointAtZPlane(ndcX, ndcY, zPlane){
+  tempVector.set(ndcX, ndcY, 0.5).unproject(camera);
+  const dir = tempVector.sub(camera.position).normalize();
+  const t = (zPlane - camera.position.z) / dir.z;
+
+  return camera.position.clone().add(dir.multiplyScalar(t));
+}
+
+function getScreenBoundsAtZPlane(zPlane){
+  const corners = [
+    getWorldPointAtZPlane(-1, -1, zPlane),
+    getWorldPointAtZPlane(-1, 1, zPlane),
+    getWorldPointAtZPlane(1, -1, zPlane),
+    getWorldPointAtZPlane(1, 1, zPlane)
+  ];
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  for(const p of corners){
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y);
+    maxY = Math.max(maxY, p.y);
+  }
+
+  return { minX, maxX, minY, maxY };
+}
 
 function createChunk(chunkIndex){
   const chunkGroup = new THREE.Group();
@@ -356,6 +401,8 @@ if(fogSlider) {
   });
 }
 
+
+
 updateChunks();
 
 
@@ -364,11 +411,29 @@ render();
 function render()
 {
   requestAnimationFrame(render);
+
   aviao.position.z += 0.4;
+  cameraTarget.position.z = aviao.position.z;
+  camera.position.z = cameraTarget.position.z + cameraFollowZOffset;
+  camera.lookAt(cameraTarget.position.x, cameraTarget.position.y, cameraTarget.position.z);
+  camera.updateMatrixWorld();
+
+  const mouseWorld = getWorldPointAtZPlane(mouseNDC.x, mouseNDC.y, aviao.position.z);
+  const bounds = getScreenBoundsAtZPlane(aviao.position.z);
+  const screenMargin = 1.0;
+
+  const targetX = THREE.MathUtils.clamp(mouseWorld.x, bounds.minX + screenMargin, bounds.maxX - screenMargin);
+  const targetY = THREE.MathUtils.clamp(mouseWorld.y, bounds.minY + screenMargin, bounds.maxY - screenMargin);
+
+  aviao.position.x = THREE.MathUtils.lerp(aviao.position.x, targetX, 0.12);
+  aviao.position.y = THREE.MathUtils.lerp(aviao.position.y, targetY, 0.12);
+
+  // inclinação visual para reforçar movimento lateral e vertical
+  aviao.rotation.z = THREE.MathUtils.lerp(aviao.rotation.z, -(targetX - aviao.position.x) * 0.05, 0.1);
+  aviao.rotation.x = THREE.MathUtils.lerp(aviao.rotation.x, (targetY - aviao.position.y) * 0.03, 0.1);
+
   helice.rotation.x += 0.1;
   stats.update();
   updateChunks();
-  camera.position.z = aviao.position.z + cameraFollowZOffset;
-  camera.lookAt(aviao.position.x, aviao.position.y, aviao.position.z);
   renderer.render(scene, camera) // Render scene
 }
