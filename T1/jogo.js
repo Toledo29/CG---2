@@ -12,14 +12,14 @@ import {initRenderer,
 let scene, renderer, camera, light, orbit;; // Initial variables
 scene = new THREE.Scene();    // Create main scene
 renderer = initRenderer();    // Init a basic renderer
-camera = initCamera(new THREE.Vector3(0, 11, -90)); // Init camera in this position
-camera.lookAt(0, 11, 0);
 light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
    camera.position.set(0.0, 11, -90.0);
    camera.up.set( 0.0, 1.0, 0.0 );
    camera.lookAt(0.0, 11, 0.0);
+
+  //  orbit = new OrbitControls( camera, renderer.domElement );
 
 // cria os materiais para os objetos
 let material1 = setDefaultMaterial('rgb(139, 69, 19)');
@@ -45,12 +45,12 @@ const halfPlaneWidth = planeWidth / 2;
 const halfPlaneDepth = planeDepth / 2;
 
 // cria geometria dos componentes da árvore
-let logGeometry1 = new THREE.CylinderGeometry(0.3, 0.3, 3, 32);
-let logGeometry2 = new THREE.CylinderGeometry(0.3, 0.3, 3, 32);
-let sphereLeafGeometry1 = new THREE.SphereGeometry(1.3, 32, 32);
-let coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 32);
-let coneLeafGeometry2 = new THREE.ConeGeometry(1.5, 2, 32);
-let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 32);
+let logGeometry1 = new THREE.CylinderGeometry(0.3, 0.3, 3, 5);
+let logGeometry2 = new THREE.CylinderGeometry(0.3, 0.3, 3, 5);
+let sphereLeafGeometry1 = new THREE.SphereGeometry(1.3, 32, 5);
+let coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 5);
+let coneLeafGeometry2 = new THREE.ConeGeometry(1.5, 2, 5);
+let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 5);
 
 // cria o avião
 // cria o avião
@@ -64,7 +64,7 @@ let corpoMat = new THREE.MeshStandardMaterial({
     roughness: 0.2  // superfície mais lisa  
 });
 let corpo = new THREE.Mesh(corpoGeo, corpoMat);
-corpo.rotation.z = Math.PI / 2;
+corpo.rotation.x = -Math.PI / 2;
 aviao.add(corpo);
 
 // cria asa adireita do avião 
@@ -76,32 +76,35 @@ let asaMat = new THREE.MeshStandardMaterial({
 });
 let asaDireita = new THREE.Mesh(asaGeoDireita, asaMat);
 asaDireita.rotation.x = Math.PI / 2;
+asaDireita.rotation.z = Math.PI / 2;
 asaDireita.scale.set(1, 1, 0.2);
-asaDireita.position.z = 2;
-asaDireita.position.x = 0.5;
+asaDireita.position.x = -2;
+asaDireita.position.z = 0.5;
 aviao.add(asaDireita);
 
-let pontaGeoDIreita = new THREE.SphereGeometry(0.3, 32, 16, 0, Math.PI);
+let pontaGeoDIreita = new THREE.SphereGeometry(0.3, 32, 16);
 let pontaDireita = new THREE.Mesh(pontaGeoDIreita, asaMat);
-pontaDireita.position.set(0.5, 0, 4); 
-pontaDireita.rotation.z = Math.PI / 2;  
+pontaDireita.position.set(4, 0, 0.5); 
+pontaDireita.rotation.z = Math.PI / 2;
+pontaDireita.rotation.y = Math.PI / 2 ; // usei para virar a ponta da asa para o outro lado
 pontaDireita.scale.set(0.2, 1, 0.6); 
 aviao.add(pontaDireita);
 
 // cria asa esqueda do avião 
 let asaGeoEsquerda = new THREE.CylinderGeometry( 0.5, 0.3, 4, 32 );
 let asaEsquerda = new THREE.Mesh(asaGeoEsquerda, asaMat);
-asaEsquerda.rotation.x = Math.PI / 2;
+asaEsquerda.rotation.x = -Math.PI / 2;
+asaEsquerda.rotation.z = Math.PI / 2;
 asaEsquerda.scale.set(1, 1, 0.2);
-asaEsquerda.position.z = -2;
-asaEsquerda.position.x = 0.5;
+asaEsquerda.position.x = 2;
+asaEsquerda.position.z = 0.5;
 aviao.add(asaEsquerda);
 
-let pontaGeoEsquerda = new THREE.SphereGeometry(0.3, 32, 16, 0, Math.PI);
+let pontaGeoEsquerda = new THREE.SphereGeometry(0.3, 32, 16);
 let pontaEsquerda = new THREE.Mesh(pontaGeoEsquerda, asaMat);
-pontaEsquerda.position.set(0.5, 0, -4);
+pontaEsquerda.position.set(-4, 0, 0.5);
 pontaEsquerda.rotation.z = Math.PI / 2 ; 
-pontaEsquerda.rotation.y = Math.PI  ; // usei para virar a ponta da asa para o outro lado
+pontaEsquerda.rotation.y = Math.PI / 2 ; // usei para virar a ponta da asa para o outro lado
 pontaEsquerda.scale.set(0.2, 1, 0.6); 
 aviao.add(pontaEsquerda);
 
@@ -113,20 +116,22 @@ let caudaMat = new THREE.MeshStandardMaterial({
     roughness: 0.2   
 });
 let cauda = new THREE.Mesh(caudaGeo, caudaMat);
-cauda.position.set(-2, 0, 0);
-cauda.rotation.z = Math.PI / 2;
+cauda.position.set(0, 0, -2);
+cauda.rotation.x = -Math.PI / 2;
 aviao.add(cauda);
 
 // criar cauda cima
 let caudaGeoCima = new THREE.CylinderGeometry( 0.05, 0.1, 0.8, 32 );
 let caudaCima = new THREE.Mesh(caudaGeoCima, caudaMat);
 caudaCima.scale.set(-2, 1, 0.5);
-caudaCima.position.set(-2, 0.5, 0);
+caudaCima.rotation.y = Math.PI / 2;
+caudaCima.position.set(0, 0.5, -2);
 aviao.add(caudaCima);
 
 let pontaGeoCima = new THREE.SphereGeometry(0.05, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
 let pontaCima = new THREE.Mesh(pontaGeoCima, caudaMat);
-pontaCima.position.set(-2, 0.9, 0);
+pontaCima.position.set(0, 0.9, -2);
+pontaCima.rotation.y = Math.PI / 2;
 pontaCima.scale.set(-2, 1, 0.5); 
 aviao.add(pontaCima);
 
@@ -134,31 +139,34 @@ aviao.add(pontaCima);
 let caudaGeoDireita = new THREE.CylinderGeometry( 0.05, 0.1, 0.8, 32 );
 let caudaDireita = new THREE.Mesh(caudaGeoDireita, caudaMat);
 caudaDireita.rotation.x = Math.PI / 2;
+caudaDireita.rotation.z = Math.PI / 2;
 caudaDireita.scale.set(-2, 1, 0.5);
-caudaDireita.position.set(-2, 0, 0.5);
+caudaDireita.position.set(-0.5, 0, -2);
 aviao.add(caudaDireita);
 
-let pontaCaudaGeoDIreita = new THREE.SphereGeometry(0.05, 32, 16, 0, Math.PI * 2);
+let pontaCaudaGeoDIreita = new THREE.SphereGeometry(0.05, 32, 16);
 let pontaCaudaDireita = new THREE.Mesh(pontaCaudaGeoDIreita, caudaMat);
-pontaCaudaDireita.position.set(-2, 0, 0.9); 
+pontaCaudaDireita.position.set(0.9, 0, -2); 
 pontaCaudaDireita.scale.set(-2, 1, 0.5); 
 pontaCaudaDireita.rotation.x = Math.PI / 2;  // so assim q consegui fazer
+pontaCaudaDireita.rotation.z = Math.PI / 2; // usei para virar a ponta da asa para o outro lado
 aviao.add(pontaCaudaDireita);
 
 // criar cauda esquerda
 let caudaGeoEsquerda = new THREE.CylinderGeometry( 0.1, 0.05, 0.8, 32 );
 let caudaEsquerda = new THREE.Mesh(caudaGeoEsquerda, caudaMat);
 caudaEsquerda.rotation.x = Math.PI / 2;
+caudaEsquerda.rotation.z = Math.PI / 2;
 caudaEsquerda.scale.set(-2, 1, 0.5);
-caudaEsquerda.position.set(-2, 0, -0.5);
+caudaEsquerda.position.set(0.5, 0, -2);
 aviao.add(caudaEsquerda);
 
-let pontaCaudaGeoEsquerda = new THREE.SphereGeometry(0.05, 32, 16, 0, Math.PI);
+let pontaCaudaGeoEsquerda = new THREE.SphereGeometry(0.05, 32, 16);
 let pontaCaudaEsquerda = new THREE.Mesh(pontaCaudaGeoEsquerda, caudaMat);
-pontaCaudaEsquerda.position.set(-2, 0, -0.9); 
+pontaCaudaEsquerda.position.set(-0.9, 0, -2); 
 pontaCaudaEsquerda.scale.set(-2, 1, 0.5); 
 pontaCaudaEsquerda.rotation.x = Math.PI / 2; 
-pontaCaudaEsquerda.rotation.y = Math.PI  ; // usei para virar a ponta da asa para o outro lado 
+pontaCaudaEsquerda.rotation.z = Math.PI/2  ; // usei para virar a ponta da asa para o outro lado 
 aviao.add(pontaCaudaEsquerda);
 
 
@@ -172,8 +180,8 @@ let cabineMat = new THREE.MeshPhongMaterial({
     specular: 0xffffff  // cor do brilho refletido
 });
 let cabine = new THREE.Mesh(cabineGeo, cabineMat);
-cabine.rotation.z = Math.PI / 1.9;
-cabine.position.set(0.5, 0.4, 0);
+cabine.rotation.x = -Math.PI / 1.9;
+cabine.position.set(0, 0.4, 0.5);
 
 // bordas da cabine arredondadas
 let cabineBorda1Geo = new THREE.SphereGeometry(0.2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -191,8 +199,8 @@ aviao.add(cabine);
 // cria nariz do avião
 let narizGeo = new THREE.SphereGeometry( 0.6, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2 );
 let nariz = new THREE.Mesh(narizGeo, corpoMat);
-nariz.position.set(2.0, 0, 0);
-nariz.rotation.z = -Math.PI / 2;
+nariz.position.set(0, 0, 2.0);
+nariz.rotation.x = Math.PI / 2;
 aviao.add(nariz);
 
 // cria helice com 3 pás 
@@ -212,7 +220,7 @@ for(let i = 0; i < 3; i++) {
     pa.position.set(0, 0, 0);
     
     // rotaciona cada pá 120 graus (2π/3 radianos)
-    pa.rotation.x = (i * Math.PI * 2) / 3;
+    pa.rotation.z = (i * Math.PI * 2) / 3;
     
     helice.add(pa);
 }
@@ -220,16 +228,16 @@ for(let i = 0; i < 3; i++) {
 // cria o núcleo central da hélice
 let nucleoGeo = new THREE.CapsuleGeometry(0.12, 0.12, 4, 8, 1);
 let nucleo = new THREE.Mesh(nucleoGeo, heliceMat);
-nucleo.rotation.z = Math.PI / 2;
+nucleo.rotation.x = Math.PI / 2;
 helice.add(nucleo);
 
 // posiciona a hélice na ponta do nariz
-helice.position.set(2.7, 0, 0);
+helice.position.set(0, 0, 2.7);
 aviao.add(helice);
 
-aviao.scale.set(1, 1, 1);
+aviao.scale.set(2, 2, 2);
 aviao.position.set(0, 11.5, -70);
-aviao.rotation.y = 3 * (Math.PI / 2);
+// aviao.rotation.x = Math.PI;
 scene.add(aviao);
 
 // alvo invisivel para camera (x/y fixos e z seguindo o aviao)
@@ -412,6 +420,9 @@ function render()
 {
   requestAnimationFrame(render);
 
+  const maxRollZ = THREE.MathUtils.degToRad(45);
+  const lateralResponse = 8.0;
+
   aviao.position.z += 0.4;
   cameraTarget.position.z = aviao.position.z;
   camera.position.z = cameraTarget.position.z + cameraFollowZOffset;
@@ -428,11 +439,18 @@ function render()
   aviao.position.x = THREE.MathUtils.lerp(aviao.position.x, targetX, 0.12);
   aviao.position.y = THREE.MathUtils.lerp(aviao.position.y, targetY, 0.12);
 
-  // inclinação visual para reforçar movimento lateral e vertical
-  aviao.rotation.z = THREE.MathUtils.lerp(aviao.rotation.z, -(targetX - aviao.position.x) * 0.05, 0.1);
-  aviao.rotation.x = THREE.MathUtils.lerp(aviao.rotation.x, (targetY - aviao.position.y) * 0.03, 0.1);
+  // inclina ate 45 graus com movimento lateral e estabiliza ao cessar movimento
+  const lateralDelta = targetX - aviao.position.x;
+  const desiredRollZ = THREE.MathUtils.clamp(
+    -(lateralDelta / lateralResponse) * maxRollZ,
+    -maxRollZ,
+    maxRollZ
+  );
+  aviao.rotation.z = THREE.MathUtils.lerp(aviao.rotation.z, desiredRollZ, 0.12);
 
-  helice.rotation.x += 0.1;
+  // aviao.rotation.x += 1; // leve rotação para dar mais dinamismo
+
+  helice.rotation.z += 0.1;
   stats.update();
   updateChunks();
   renderer.render(scene, camera) // Render scene
