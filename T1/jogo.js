@@ -29,19 +29,107 @@ let material3 = setDefaultMaterial('darkgreen');
 window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
 
 
-// cria plano do chão
-const planeWidth = 150;
-const planeDepth = 150;
-const halfPlaneWidth = planeWidth / 2;
-const halfPlaneDepth = planeDepth / 2;
-let plane = createGroundPlaneWired(planeWidth, planeDepth);
-scene.add(plane);
+// cria plano do chão - SISTEMA DE CHUNKS DINÂMICOS PARA SIMULAR INFINITO
+const chunkSize = 150; // tamanho de cada chunk do plano
+const renderDistance = 2; // quantos chunks renderizar ao redor do avião (3 = 7x7 chunks)
+let loadedChunks = new Map(); // armazena chunks já criados: "x,z" -> objeto grupo
+
+function createChunk(chunkX, chunkZ) {
+  const key = `${chunkX},${chunkZ}`;
+  
+  // se chunk já existe, retorna ele
+  if(loadedChunks.has(key)) {
+    return loadedChunks.get(key);
+  }
+  
+  // cria novo chunk
+  let chunkGroup = new THREE.Group();
+  
+  // cria o plano do chunk
+  let chunkPlane = createGroundPlaneWired(chunkSize, chunkSize);
+  
+  // muda a cor do plano para marrom
+  chunkPlane.traverse((child) => {
+    if(child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0x4e3322, // marrom
+        metalness: 0.1,
+        roughness: 0.8
+      });
+    }
+  });
+  
+  chunkPlane.position.set(chunkX * chunkSize, 0, chunkZ * chunkSize);
+  chunkGroup.add(chunkPlane);
+  
+  // gera árvores para este chunk
+  const treesInChunk = 500; // árvores por chunk - aumentado para maior densidade
+  const treeMinDistance = 4.5;
+  const margin = 2;
+  
+  for(let t = 0; t < treesInChunk; t++) {
+    let x = THREE.MathUtils.randFloat(-chunkSize/2 + margin, chunkSize/2 - margin);
+    let z = THREE.MathUtils.randFloat(-chunkSize/2 + margin, chunkSize/2 - margin);
+    
+    let num = Math.floor(Math.random() * 100);
+    let log = new THREE.Mesh(
+      num % 2 == 0 ? logGeometry1 : logGeometry2,
+      num % 2 == 0 ? material1 : material1
+    );
+    log.position.set(
+      chunkX * chunkSize + x,
+      1.5,
+      chunkZ * chunkSize + z
+    );
+    
+    let leaf = new THREE.Mesh(
+      num % 2 == 0 ? sphereLeafGeometry1 : coneLeafGeometry1,
+      num % 2 == 0 ? material2 : material3
+    );
+    // para árvores com esfera (par): posição normal
+    // para árvores com cone (ímpar): aumentar altura colocando mais para cima
+    leaf.position.set(0, num % 2 == 0 ? 1.5 : 2.0, 0);
+    log.add(leaf);
+    
+    chunkGroup.add(log);
+  }
+  
+  scene.add(chunkGroup);
+  loadedChunks.set(key, chunkGroup);
+  return chunkGroup;
+}
+
+function updateChunks(aviaoX, aviaoZ) {
+  // calcula em qual chunk o avião está
+  const currentChunkX = Math.floor(aviaoX / chunkSize);
+  const currentChunkZ = Math.floor(aviaoZ / chunkSize);
+  
+  // carrega chunks ao redor do avião
+  for(let x = currentChunkX - renderDistance; x <= currentChunkX + renderDistance; x++) {
+    for(let z = currentChunkZ - renderDistance; z <= currentChunkZ + renderDistance; z++) {
+      createChunk(x, z);
+    }
+  }
+  
+  // remove chunks que ficaram muito longe
+  const maxDistance = renderDistance + 2;
+  for(let [key, chunk] of loadedChunks.entries()) {
+    const [chunkX, chunkZ] = key.split(',').map(Number);
+    const distX = Math.abs(chunkX - currentChunkX);
+    const distZ = Math.abs(chunkZ - currentChunkZ);
+    
+    if(distX > maxDistance || distZ > maxDistance) {
+      scene.remove(chunk);
+      loadedChunks.delete(key);
+    }
+  }
+}
 
 
 
 
 
-// cria geometria dos componentes da árvore
+// geometrias das árvores
 let logGeometry1 = new THREE.CylinderGeometry(0.3, 0.3, 3, 32);
 let logGeometry2 = new THREE.CylinderGeometry(0.3, 0.3, 3, 32);
 let sphereLeafGeometry1 = new THREE.SphereGeometry(1.3, 32, 32);
@@ -51,78 +139,6 @@ let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 32);
 
 // Retângulo vermelho removido - substituído pelo avião 3D
 const cameraFollowZOffset = -20;
-let groundCurrentCenter = new THREE.Vector3(0, 0, 0);
-
-// cria e posiciona árvores em pontos aleatórios com distância mínima entre elas
-const treeCount = 400;
-const minDistance = 4.5;
-const margin = 2;
-const edgeBandWidth = Math.min(20, Math.min(halfPlaneWidth, halfPlaneDepth) * 0.3);
-const edgeBias = 0.45;
-const maxPlacementAttempts = 10000;
-const treePositions = [];
-
-let attempts = 0;
-while(treePositions.length < treeCount && attempts < maxPlacementAttempts){
-  let x = THREE.MathUtils.randFloat(-halfPlaneWidth + margin, halfPlaneWidth - margin);
-  let z = THREE.MathUtils.randFloat(-halfPlaneDepth + margin, halfPlaneDepth - margin);
-
-  // parte das árvores é sorteada com viés para as bordas do plano
-  if(Math.random() < edgeBias){
-    const nearRightOrTop = Math.random() < 0.5;
-    const useXAxis = Math.random() < 0.5;
-
-    if(useXAxis){
-      x = nearRightOrTop
-        ? THREE.MathUtils.randFloat(halfPlaneWidth - margin - edgeBandWidth, halfPlaneWidth - margin)
-        : THREE.MathUtils.randFloat(-halfPlaneWidth + margin, -halfPlaneWidth + margin + edgeBandWidth);
-    } else {
-      z = nearRightOrTop
-        ? THREE.MathUtils.randFloat(halfPlaneDepth - margin - edgeBandWidth, halfPlaneDepth - margin)
-        : THREE.MathUtils.randFloat(-halfPlaneDepth + margin, -halfPlaneDepth + margin + edgeBandWidth);
-    }
-  }
-
-  let tooClose = false;
-  for(const pos of treePositions){
-    if(pos.distanceToSquared(new THREE.Vector3(x, 0, z)) < minDistance * minDistance){
-      tooClose = true;
-      break;
-    }
-  }
-
-  if(!tooClose){
-    treePositions.push(new THREE.Vector3(x, 0, z));
-  }
-
-  attempts++;
-}
-
-for(const pos of treePositions){
-  let num = Math.floor(Math.random() * 100);
-  if(num % 2 == 0){
-    let log = new THREE.Mesh(logGeometry1, material1);
-    let sphereleaf = new THREE.Mesh(sphereLeafGeometry1, material2);
-    log.position.set(pos.x, 1.5, pos.z);
-    log.add(sphereleaf);
-    sphereleaf.position.set(0, 1.5, 0);
-    scene.add(log);
-  }
-  else{
-    let log = new THREE.Mesh(logGeometry2, material1);
-    let coneleaf1 = new THREE.Mesh(coneLeafGeometry1, material3);
-    let coneleaf2 = new THREE.Mesh(coneLeafGeometry2, material3);
-    let coneleaf3 = new THREE.Mesh(coneLeafGeometry3, material3);
-    log.position.set(pos.x, 1.5, pos.z);
-    log.add(coneleaf1);
-    log.add(coneleaf2);
-    log.add(coneleaf3);
-    coneleaf1.position.set(0, 0, 0);
-    coneleaf2.position.set(0, 1, 0);
-    coneleaf3.position.set(0, 2, 0);
-    scene.add(log);
-  }
-}
 
 // cria o avião
 let aviao = new THREE.Group();
@@ -308,6 +324,10 @@ function render()
 {
   requestAnimationFrame(render);
   aviao.position.z += 0.5;
+  
+  // atualiza chunks dinâmicos baseado na posição do avião
+  updateChunks(aviao.position.x, aviao.position.z);
+  
   camera.position.z = aviao.position.z + cameraFollowZOffset;
   camera.lookAt(aviao.position.x, aviao.position.y, aviao.position.z);
   
