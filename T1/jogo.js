@@ -2,30 +2,29 @@ import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import Stats from '../build/jsm/libs/stats.module.js';
 import {initRenderer, 
-        initCamera,
         initDefaultBasicLight,
         setDefaultMaterial,
         InfoBox,
         onWindowResize,
         createGroundPlaneWired} from "../libs/util/util.js";
 
-let scene, renderer, camera, light, orbit;; // Initial variables
-scene = new THREE.Scene();    // Create main scene
-renderer = initRenderer();    // Init a basic renderer
-light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
+let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
+scene = new THREE.Scene();    // Cria cena
+renderer = initRenderer();    // Inicializa o renderizador
+light = initDefaultBasicLight(scene); // Inicializa luz
 
+// Cria a câmera e configura
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
    camera.position.set(0.0, 11, -90.0);
    camera.up.set( 0.0, 1.0, 0.0 );
    camera.lookAt(0.0, 11, 0.0);
 
-  //  orbit = new OrbitControls( camera, renderer.domElement );
-
-// cria os materiais para os objetos
+// cria os materiais padrões para os objetos
 let material1 = setDefaultMaterial('rgb(139, 69, 19)');
 let material2 = setDefaultMaterial('green');
 let material3 = setDefaultMaterial('darkgreen');
 
+// Cria Fog
 const fogColor = 0x87ceeb; // cor da névoa (azul claro)
 let fogDistance = 100; // distância onde a névoa começa a ser aplicada
 scene.background = new THREE.Color(fogColor);
@@ -33,18 +32,20 @@ scene.fog = new THREE.Fog( fogColor, fogDistance, 500 );
 
 // Listen window size changes
 window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
-// Show text information onscreen
+
+
+// Configuração de FPS
 const container = document.getElementById( 'container' );
 const stats = new Stats();
 container.appendChild( stats.dom );
 
-// cria plano do chão
+// Cria constantes para plano do chão
 const planeWidth = 500;
 const planeDepth = 150;
 const halfPlaneWidth = planeWidth / 2;
 const halfPlaneDepth = planeDepth / 2;
 
-// cria geometria dos componentes da árvore
+// Cria geometria dos componentes da árvore
 let logGeometry1 = new THREE.CylinderGeometry(0.3, 0.3, 4, 5);
 let logGeometry2 = new THREE.CylinderGeometry(0.3, 0.3, 3, 5);
 let sphereLeafGeometry1 = new THREE.SphereGeometry(1.3, 32, 5);
@@ -52,7 +53,6 @@ let coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 5);
 let coneLeafGeometry2 = new THREE.ConeGeometry(1.5, 2, 5);
 let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 5);
 
-// cria o avião
 // cria o avião
 let aviao = new THREE.Group();
 
@@ -246,20 +246,20 @@ cameraTarget.position.set(0, 11.5, aviao.position.z);
 scene.add(cameraTarget);
 
 // configura variáveis para controle de geração dos chunks
-const cameraFollowZOffset = -20;
-const treeCountPerChunk = 400;
-const minDistance = 4.5;
-const margin = 2;
-const edgeBandWidth = Math.min(20, Math.min(halfPlaneWidth, halfPlaneDepth) * 0.3);
+const cameraFollowZOffset = -20; // distância da camera para o alvo
+const treeCountPerChunk = 400; // quantidade de árvores por chunk
+const minDistance = 4.5; // distância mínima entre as árvores para evitar sobreposição
+const margin = 2; // margem ao redor do chunk
+const edgeBandWidth = Math.min(20, Math.min(halfPlaneWidth, halfPlaneDepth) * 0.3); //
 const edgeBias = 0.45;
 const maxPlacementAttempts = 10000;
 
 const chunks = new Map();
-const chunksAhead = 4;
-const chunksBehind = 1;
+const chunksAhead = 4; // quantidade de chunks gerados à frente do avião
+const chunksBehind = 1; // quantidade de chunks mantidos atrás do avião 
 
 // mapeamento do mouse para movimentação do avião em X/Y
-const mouseNDC = new THREE.Vector2(0, 0);
+const mouseNDC = new THREE.Vector2(0, 0); 
 const tempVector = new THREE.Vector3();
 
 window.addEventListener('mousemove', function(event){
@@ -398,7 +398,7 @@ function updateChunks(){
   }
 }
 
-
+// Configuração do slider de controle da névoa
 const fogSlider = document.getElementById('fogSlider');
 const fogValue = document.getElementById('fogValue');
 if(fogSlider) {
@@ -412,8 +412,6 @@ if(fogSlider) {
 
 
 updateChunks();
-
-
 
 render();
 function render()
