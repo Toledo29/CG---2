@@ -26,6 +26,11 @@ let material1 = setDefaultMaterial('rgb(139, 69, 19)');
 let material2 = setDefaultMaterial('green');
 let material3 = setDefaultMaterial('darkgreen');
 
+const fogColor = 0x87ceeb; // cor da névoa (azul claro)
+let fogDistance = 100; // distância onde a névoa começa a ser aplicada
+scene.background = new THREE.Color(fogColor);
+scene.fog = new THREE.Fog( fogColor, fogDistance, 500 );
+
 // Listen window size changes
 window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
 // Show text information onscreen
@@ -34,7 +39,7 @@ const stats = new Stats();
 container.appendChild( stats.dom );
 
 // cria plano do chão
-const planeWidth = 150;
+const planeWidth = 500;
 const planeDepth = 150;
 const halfPlaneWidth = planeWidth / 2;
 const halfPlaneDepth = planeDepth / 2;
@@ -237,7 +242,7 @@ const edgeBias = 0.45;
 const maxPlacementAttempts = 10000;
 
 const chunks = new Map();
-const chunksAhead = 2;
+const chunksAhead = 4;
 const chunksBehind = 1;
 
 function createChunk(chunkIndex){
@@ -340,6 +345,17 @@ function updateChunks(){
   }
 }
 
+
+const fogSlider = document.getElementById('fogSlider');
+const fogValue = document.getElementById('fogValue');
+if(fogSlider) {
+  fogSlider.addEventListener('input', function(event) {
+    fogDistance = parseFloat(event.target.value);
+    scene.fog.far = fogDistance;
+    fogValue.textContent = fogDistance;
+  });
+}
+
 updateChunks();
 
 
@@ -349,6 +365,7 @@ function render()
 {
   requestAnimationFrame(render);
   aviao.position.z += 0.4;
+  helice.rotation.x += 0.1;
   stats.update();
   updateChunks();
   camera.position.z = aviao.position.z + cameraFollowZOffset;
