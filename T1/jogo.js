@@ -247,7 +247,7 @@ scene.add(cameraTarget);
 
 // configura variáveis para controle de geração dos chunks
 const cameraFollowZOffset = -20; // distância da camera para o alvo
-const treeCountPerChunk = 400; // quantidade de árvores por chunk
+const treeCountPerChunk = 600; // quantidade de árvores por chunk
 const minDistance = 4.5; // distância mínima entre as árvores para evitar sobreposição
 const margin = 2; // margem ao redor do chunk
 const maxPlacementAttempts = 10000;
