@@ -250,31 +250,39 @@ const cameraFollowZOffset = -20; // distância da camera para o alvo
 const treeCountPerChunk = 400; // quantidade de árvores por chunk
 const minDistance = 4.5; // distância mínima entre as árvores para evitar sobreposição
 const margin = 2; // margem ao redor do chunk
-const edgeBandWidth = Math.min(20, Math.min(halfPlaneWidth, halfPlaneDepth) * 0.3); //
-const edgeBias = 0.45;
 const maxPlacementAttempts = 10000;
 
 const chunks = new Map();
 const chunksAhead = 4; // quantidade de chunks gerados à frente do avião
 const chunksBehind = 1; // quantidade de chunks mantidos atrás do avião 
 
-// mapeamento do mouse para movimentação do avião em X/Y
+// Iniciialização de constantes para controle de mapeamento do mouse
 const mouseNDC = new THREE.Vector2(0, 0); 
-const tempVector = new THREE.Vector3();
+const raycaster = new THREE.Raycaster();
+const zPlaneNormal = new THREE.Vector3(0, 0, 1);
+const mousePlane = new THREE.Plane();
+const intersectionPoint = new THREE.Vector3();
 
+// Mapea o do mouse para movimentação do avião em X/Y
 window.addEventListener('mousemove', function(event){
   mouseNDC.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouseNDC.y = -((event.clientY / window.innerHeight) * 2 - 1);
 });
 
-function getWorldPointAtZPlane(ndcX, ndcY, zPlane){
-  tempVector.set(ndcX, ndcY, 0.5).unproject(camera);
-  const dir = tempVector.sub(camera.position).normalize();
-  const t = (zPlane - camera.position.z) / dir.z;
+// Função para obter a posição no mundo a partir das coordenadas NDC do mouse, projetando um plano no eixo Z
+function getWorldPointAtZPlane(ndcX, ndcY, zValue){
+  mousePlane.setFromNormalAndCoplanarPoint(zPlaneNormal, new THREE.Vector3(0, 0, zValue));
+  raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
 
-  return camera.position.clone().add(dir.multiplyScalar(t));
+  const hasIntersection = raycaster.ray.intersectPlane(mousePlane, intersectionPoint);
+  if(!hasIntersection){
+    return new THREE.Vector3(0, 0, zValue);
+  }
+
+  return intersectionPoint.clone();
 }
 
+// Calcula os limites do plano visível no plano Z para limitar o movimento do avião dentro da tela
 function getScreenBoundsAtZPlane(zPlane){
   const corners = [
     getWorldPointAtZPlane(-1, -1, zPlane),
@@ -298,6 +306,7 @@ function getScreenBoundsAtZPlane(zPlane){
   return { minX, maxX, minY, maxY };
 }
 
+// Função para criar um chunk de terreno com árvores, evitando sobreposição
 function createChunk(chunkIndex){
   const chunkGroup = new THREE.Group();
   const chunkCenterZ = chunkIndex * planeDepth;
@@ -312,22 +321,6 @@ function createChunk(chunkIndex){
   while(treePositions.length < treeCountPerChunk && attempts < maxPlacementAttempts){
     let x = THREE.MathUtils.randFloat(-halfPlaneWidth + margin, halfPlaneWidth - margin);
     let zLocal = THREE.MathUtils.randFloat(-halfPlaneDepth + margin, halfPlaneDepth - margin);
-
-    // parte das árvores é sorteada com viés para as bordas do chunk
-    if(Math.random() < edgeBias){
-      const nearRightOrTop = Math.random() < 0.5;
-      const useXAxis = Math.random() < 0.5;
-
-      if(useXAxis){
-        x = nearRightOrTop
-          ? THREE.MathUtils.randFloat(halfPlaneWidth - margin - edgeBandWidth, halfPlaneWidth - margin)
-          : THREE.MathUtils.randFloat(-halfPlaneWidth + margin, -halfPlaneWidth + margin + edgeBandWidth);
-      } else {
-        zLocal = nearRightOrTop
-          ? THREE.MathUtils.randFloat(halfPlaneDepth - margin - edgeBandWidth, halfPlaneDepth - margin)
-          : THREE.MathUtils.randFloat(-halfPlaneDepth + margin, -halfPlaneDepth + margin + edgeBandWidth);
-      }
-    }
 
     let tooClose = false;
     for(const pos of treePositions){
@@ -426,11 +419,9 @@ function render()
 
   aviao.position.z += 0.4;
   cameraTarget.position.z = aviao.position.z;
-  // cameraTarget.position.y = aviao.position.y - (aviao.position.y*cameraYOffset);
   cameraTarget.position.x = aviao.position.x - (aviao.position.x*cameraXOffset);
 
   camera.position.z = cameraTarget.position.z + cameraFollowZOffset;
-  // camera.position.y = cameraTarget.position.y +11;
   camera.position.x = cameraTarget.position.x;
   camera.lookAt(cameraTarget.position.x, cameraTarget.position.y, cameraTarget.position.z);
   camera.updateMatrixWorld();
@@ -454,7 +445,6 @@ function render()
   );
   aviao.rotation.z = THREE.MathUtils.lerp(aviao.rotation.z, desiredRollZ, 0.12);
 
-  // aviao.rotation.x += 1; // leve rotação para dar mais dinamismo
 
   helice.rotation.z += 0.1;
   stats.update();
