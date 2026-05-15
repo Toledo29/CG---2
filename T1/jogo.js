@@ -48,7 +48,7 @@ const halfPlaneDepth = planeDepth / 2;
 // Cria geometria dos componentes da árvore
 let logGeometry1 = new THREE.CylinderGeometry(0.3, 0.3, 4, 5);
 let logGeometry2 = new THREE.CylinderGeometry(0.3, 0.3, 3, 5);
-let sphereLeafGeometry1 = new THREE.SphereGeometry(1.3, 32, 5);
+let sphereLeafGeometry1 = new THREE.SphereGeometry(1.3, 4, 5);
 let coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 5);
 let coneLeafGeometry2 = new THREE.ConeGeometry(1.5, 2, 5);
 let coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 5);
@@ -358,6 +358,9 @@ function createChunk(chunkIndex){
     }
 
     tree.position.set(pos.x, 1.5, chunkCenterZ + pos.z);
+    if(Math.random() < 0.5){
+      tree.scale.set(0.75, 0.75, 0.75);
+    }
     chunkGroup.add(tree);
   }
 
@@ -373,20 +376,45 @@ function removeChunk(chunkIndex){
   chunks.delete(chunkIndex);
 }
 
+function recycleChunk(oldChunkGroup, newChunkIndex){
+  const chunkCenterZ = newChunkIndex * planeDepth;
+  const oldZ = oldChunkGroup.children[0].position.z;
+  const offset = chunkCenterZ - oldZ;
+  
+  // Move o plano
+  oldChunkGroup.children[0].position.z = chunkCenterZ;
+  
+  // Move todas as árvores junto
+  for(let i = 1; i < oldChunkGroup.children.length; i++){
+    oldChunkGroup.children[i].position.z += offset;
+  }
+}
+
 function updateChunks(){
   const currentChunk = Math.floor(aviao.position.z / planeDepth);
   const minChunk = currentChunk - chunksBehind;
   const maxChunk = currentChunk + chunksAhead;
 
+  // Inicializa chunks que não existem
   for(let i = minChunk; i <= maxChunk; i++){
     if(!chunks.has(i)){
       createChunk(i);
     }
   }
 
-  for(const index of chunks.keys()){
-    if(index < minChunk || index > maxChunk){
-      removeChunk(index);
+  // Recicla chunks: move o chunk mais de trás para a frente quando necessário
+  const chunksArray = Array.from(chunks.keys()).sort((a, b) => a - b);
+  
+  for(const index of chunksArray){
+    if(index < minChunk){
+      // Encontra o novo índice necessário (maxChunk + 1)
+      const newIndex = maxChunk + 1;
+      if(!chunks.has(newIndex)){
+        const oldChunkGroup = chunks.get(index);
+        recycleChunk(oldChunkGroup, newIndex);
+        chunks.delete(index);
+        chunks.set(newIndex, oldChunkGroup);
+      }
     }
   }
 }
