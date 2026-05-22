@@ -12,6 +12,7 @@ let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
 scene = new THREE.Scene();    // Cria cena
 renderer = initRenderer();    // Inicializa o renderizador
 light = initDefaultBasicLight(scene); // Inicializa luz
+const clock = new THREE.Clock();
 
 // Cria a câmera e configura
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -306,6 +307,18 @@ function getScreenBoundsAtZPlane(zPlane){
   return { minX, maxX, minY, maxY };
 }
 
+function lerpAtConstantSpeed(current, target, maxStep){
+  const distance = target - current;
+  const absDistance = Math.abs(distance);
+
+  if(absDistance === 0){
+    return current;
+  }
+
+  const alpha = Math.min(1, maxStep / absDistance);
+  return THREE.MathUtils.lerp(current, target, alpha);
+}
+
 // Função para criar um chunk de terreno com árvores, evitando sobreposição
 function createChunk(chunkIndex){
   const chunkGroup = new THREE.Group();
@@ -356,7 +369,9 @@ function createChunk(chunkIndex){
       coneleaf2.position.set(0, 1, 0);
       coneleaf3.position.set(0, 2, 0);
     }
-
+    if(Math.random() < 0.5){
+      tree.scale.set(0.8, 0.8, 0.8);
+    }
     tree.position.set(pos.x, 1.5, chunkCenterZ + pos.z);
     if(Math.random() < 0.5){
       tree.scale.set(0.75, 0.75, 0.75);
@@ -438,9 +453,12 @@ render();
 function render()
 {
   requestAnimationFrame(render);
+  const delta = (clock.getDelta()*0.6);
 
   const maxRollZ = THREE.MathUtils.degToRad(45);
   const lateralResponse = 8.0;
+  const lateralSpeed = 35;
+  const verticalSpeed = 18;
 
   const cameraXOffset = 0.6;
   const cameraYOffset = 0.8;
@@ -461,8 +479,8 @@ function render()
   const targetX = THREE.MathUtils.clamp(mouseWorld.x, bounds.minX + screenMargin, bounds.maxX - screenMargin);
   const targetY = THREE.MathUtils.clamp(mouseWorld.y, bounds.minY + screenMargin, bounds.maxY - screenMargin);
 
-  aviao.position.x = THREE.MathUtils.lerp(aviao.position.x, targetX, 0.12);
-  aviao.position.y = THREE.MathUtils.lerp(aviao.position.y, targetY, 0.12);
+  aviao.position.x = lerpAtConstantSpeed(aviao.position.x, targetX, lateralSpeed * delta);
+  aviao.position.y = lerpAtConstantSpeed(aviao.position.y, targetY, verticalSpeed * delta);
 
   // inclina ate 45 graus com movimento lateral e estabiliza ao cessar movimento
   const lateralDelta = targetX - aviao.position.x;

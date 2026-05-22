@@ -25,6 +25,7 @@ camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight,
    camera.lookAt(0, 0, 0);
    camera.position.set(5, 5, 5);
    camera.up.set( 0, 1, 0 );
+
 orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
 // Listen window size changes
@@ -40,7 +41,7 @@ let ambientLight = new THREE.AmbientLight('black', 0.5);
 scene.add( ambientLight );
 
 let dirPosition = new THREE.Vector3(2, 2, 4)
-const dirLight = new THREE.DirectionalLight('white', 0.2);
+const dirLight = new THREE.DirectionalLight('white', 0.3);
 dirLight.position.copy(dirPosition);
 // dirLight.castShadow = true;
 dirLight.shadow.mapSize.width = 2048;
