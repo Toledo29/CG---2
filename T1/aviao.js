@@ -35,7 +35,7 @@ let pontaDireita = new THREE.Mesh(pontaGeoDIreita, asaMat);
 pontaDireita.position.set(4, 0, 0.5); 
 pontaDireita.rotation.z = Math.PI / 2;
 pontaDireita.rotation.y = Math.PI / 2 ; // usei para virar a ponta da asa para o outro lado
-pontaDireita.scale.set(0.2, 1, 0.6); 
+pontaDireita.scale.set(0.2, 1, 0.6);
 aviao.add(pontaDireita);
 
 // cria asa esqueda do avião 
