@@ -13,6 +13,7 @@ import {
 import { aviao, helice } from './aviao.js';
 import { updateChunks, removeChunk, recycleChunk } from './planeUpdate.js';
 import { makeCreateChunk } from './plane.js';
+import { getTerrainHeight } from './terrain.js';
 import { createCameraController } from './cameraController.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
@@ -89,7 +90,7 @@ if (fogSlider) {
 
 
 
-updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk);
+updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
 
 render();
 function render() {
@@ -99,9 +100,20 @@ function render() {
   // delegate movement and camera updates to controller
   cameraController.update(delta);
 
+  const terrainHeight = getTerrainHeight(
+    aviao.position.x,
+    aviao.position.z
+  );
 
-  helice.rotation.z += 0.1;
+  const safeHeight = terrainHeight + 8;
+
+  if (aviao.position.y < safeHeight) {
+    aviao.position.y = safeHeight;
+  }
+
+helice.rotation.z += 0.1;
+stats.update();
   stats.update();
-  updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk);
+  updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
   renderer.render(scene, camera) // Render scene
 }
