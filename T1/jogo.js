@@ -12,6 +12,7 @@ import {
 import { aviao, helice } from './aviao.js';
 import { updateChunks, removeChunk, recycleChunk } from './planeUpdate.js';
 import { makeCreateChunk } from './plane.js';
+import { getTerrainHeight } from './terrain.js';
 import { createCameraController } from './cameraController.js';
 import { createLights, updateDirectionalShadow } from './light.js';
 import { createLights, updateDirectionalShadow } from './light.js';
@@ -104,7 +105,7 @@ if (fogSlider) {
 
 
 
-updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk);
+updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
 
 render();
 function render() {
@@ -114,10 +115,21 @@ function render() {
   // delegate movement and camera updates to controller
   cameraController.update(delta);
 
+  const terrainHeight = getTerrainHeight(
+    aviao.position.x,
+    aviao.position.z
+  );
 
-  helice.rotation.z += 0.1;
+  const safeHeight = terrainHeight + 8;
+
+  if (aviao.position.y < safeHeight) {
+    aviao.position.y = safeHeight;
+  }
+
+helice.rotation.z += 0.1;
+stats.update();
   stats.update();
-  updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk);
+  updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
   // move directional light target to be opposite side of the plane and follow the airplane
   if (light && light.target && light.userData && light.userData.shadowSide) {
     const side = light.userData.shadowSide;
