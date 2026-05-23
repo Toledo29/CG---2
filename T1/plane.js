@@ -1,30 +1,37 @@
 import * as THREE from 'three';
 import { generateTreesForChunk } from './trees.js';
-import { createGroundPlaneWired } from '../libs/util/util.js';
+import { createTerrain, getTerrainHeight } from './terrain.js';
 
 // Factory that returns a createChunk function bound to provided dependencies
-function makeCreateChunk(deps) {
-    const {
-        planeWidth,
-        planeDepth,
-        halfPlaneWidth,
-        halfPlaneDepth,
-        treeCountPerChunk,
-        maxPlacementAttempts,
-        margin,
-        minDistance,
-        scene,
-        chunks
-    } = deps;
+    function makeCreateChunk(deps) {
+        const {
+            planeWidth,
+            planeDepth,
+            halfPlaneWidth,
+            halfPlaneDepth,
+            treeCountPerChunk,
+            maxPlacementAttempts,
+            margin,
+            minDistance,
+            scene,
+            chunks
+        } = deps;
 
     return function createChunk(chunkIndex) {
         const chunkGroup = new THREE.Group();
         const chunkCenterZ = chunkIndex * planeDepth;
 
-        const chunkPlane = createGroundPlaneWired(planeWidth, planeDepth);
-        chunkPlane.position.set(0, 0, chunkCenterZ);
-        chunkPlane.receiveShadow = true;
-        chunkGroup.add(chunkPlane);
+        const terrain = createTerrain(
+            planeWidth,
+            planeDepth,
+            120,
+            120,
+            chunkCenterZ
+        );
+
+        terrain.position.z = chunkCenterZ;
+
+        chunkGroup.add(terrain);
 
         const treePositions = [];
         let attempts = 0;
@@ -42,7 +49,13 @@ function makeCreateChunk(deps) {
             }
 
             if (!tooClose) {
-                treePositions.push(new THREE.Vector3(x, 0, zLocal));
+                const worldZ = chunkCenterZ + zLocal;
+
+                const y = getTerrainHeight(x, worldZ);
+
+                treePositions.push(
+                    new THREE.Vector3(x, y, zLocal)
+                );
             }
             attempts++;
         }

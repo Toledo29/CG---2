@@ -47,7 +47,11 @@ function generateTreesForChunk(treePositions, chunkGroup, chunkCenterZ) {
         if (Math.random() < 0.5) {
             tree.scale.set(0.8, 0.8, 0.8);
         }
-        tree.position.set(pos.x, 1.5, chunkCenterZ + pos.z);
+        tree.position.set(
+    pos.x,
+    pos.y + 1.5,
+    chunkCenterZ + pos.z
+);
         if (Math.random() < 0.5) {
             tree.scale.set(0.75, 0.75, 0.75);
         }
