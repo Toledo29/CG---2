@@ -23,6 +23,7 @@ function makeCreateChunk(deps) {
 
         const chunkPlane = createGroundPlaneWired(planeWidth, planeDepth);
         chunkPlane.position.set(0, 0, chunkCenterZ);
+        chunkPlane.receiveShadow = true;
         chunkGroup.add(chunkPlane);
 
         const treePositions = [];

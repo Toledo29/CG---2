@@ -3,7 +3,6 @@ import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import Stats from '../build/jsm/libs/stats.module.js';
 import {
   initRenderer,
-  initDefaultBasicLight,
   setDefaultMaterial,
   InfoBox,
   onWindowResize,
@@ -14,12 +13,23 @@ import { aviao, helice } from './aviao.js';
 import { updateChunks, removeChunk, recycleChunk } from './planeUpdate.js';
 import { makeCreateChunk } from './plane.js';
 import { createCameraController } from './cameraController.js';
+import { createLights, updateDirectionalShadow } from './light.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
 scene = new THREE.Scene();    // Cria cena
-renderer = initRenderer();    // Inicializa o renderizador
-light = initDefaultBasicLight(scene); // Inicializa luz
 const clock = new THREE.Clock();
+
+renderer = new THREE.WebGLRenderer();
+// renderer = initRenderer();    // View function in util/utils
+renderer.shadowMap.enabled = true;
+renderer.shadowMapSoft = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.getElementById("webgl-output").appendChild(renderer.domElement);
+
+renderer.setClearColor("rgb(255, 255, 255)");
 
 // Cria a câmera e controlador
 const cameraController = createCameraController(scene, renderer, aviao);
@@ -29,6 +39,7 @@ const fogColor = 0x87ceeb; // cor da névoa (azul claro)
 let fogDistance = 100; // distância onde a névoa começa a ser aplicada
 scene.background = new THREE.Color(fogColor);
 scene.fog = new THREE.Fog(fogColor, fogDistance, 500);
+light = createLights(scene, fogDistance);
 
 // Listen window size changes
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
@@ -83,6 +94,8 @@ if (fogSlider) {
   fogSlider.addEventListener('input', function (event) {
     fogDistance = parseFloat(event.target.value);
     scene.fog.far = fogDistance;
+    const newSide = updateDirectionalShadow(light, fogDistance);
+    if (light) light.userData.shadowSide = newSide;
     fogValue.textContent = fogDistance;
   });
 }
@@ -103,5 +116,11 @@ function render() {
   helice.rotation.z += 0.1;
   stats.update();
   updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk);
+  // move directional light target to be opposite side of the plane and follow the airplane
+  if (light && light.target && light.userData && light.userData.shadowSide) {
+    const side = light.userData.shadowSide;
+    light.target.position.set(aviao.position.x + side, 0, aviao.position.z);
+    light.target.updateMatrixWorld();
+  }
   renderer.render(scene, camera) // Render scene
 }
