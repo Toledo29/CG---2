@@ -24,7 +24,6 @@ function generateTreesForChunk(treePositions, chunkGroup, chunkCenterZ) {
             sphereleaf.position.set(0, 2, 0);
             // enable shadows for leaf
             sphereleaf.castShadow = true;
-            sphereleaf.receiveShadow = true;
         } else {
             tree = new THREE.Mesh(logGeometry2, material1);
             const coneleaf1 = new THREE.Mesh(coneLeafGeometry1, material3);
@@ -38,26 +37,22 @@ function generateTreesForChunk(treePositions, chunkGroup, chunkCenterZ) {
             coneleaf3.position.set(0, 2, 0);
             // enable shadows for leaves
             coneleaf1.castShadow = true;
-            coneleaf1.receiveShadow = true;
             coneleaf2.castShadow = true;
-            coneleaf2.receiveShadow = true;
             coneleaf3.castShadow = true;
-            coneleaf3.receiveShadow = true;
         }
         if (Math.random() < 0.5) {
             tree.scale.set(0.8, 0.8, 0.8);
         }
         tree.position.set(
-    pos.x,
-    pos.y + 1.5,
-    chunkCenterZ + pos.z
-);
+            pos.x,
+            pos.y + 1.5,
+            chunkCenterZ + pos.z
+        );
         if (Math.random() < 0.5) {
             tree.scale.set(0.75, 0.75, 0.75);
         }
         // enable shadows for trunk and allow trunk to receive shadows
         tree.castShadow = true;
-        tree.receiveShadow = true;
         chunkGroup.add(tree);
     }
 }

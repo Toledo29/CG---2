@@ -4,7 +4,7 @@ import * as THREE from 'three';
 function updateDirectionalShadow(directionalLight, fogDistance) {
     // ensure shadow frustum covers terrain area — keep a sensible minimum
     const shadowSide = Math.max(fogDistance * 1.1, 600);
-    const shadowMapSize = fogDistance > 300 ? 2048 : 1024;
+    const shadowMapSize = 1024;
 
     directionalLight.shadow.mapSize.width = shadowMapSize;
     directionalLight.shadow.mapSize.height = shadowMapSize;
@@ -14,9 +14,10 @@ function updateDirectionalShadow(directionalLight, fogDistance) {
     directionalLight.shadow.camera.bottom = -shadowSide / 2;
     directionalLight.shadow.camera.near = 1;
     directionalLight.shadow.camera.far = Math.max(fogDistance * 2, 1200);
+    directionalLight.shadow.radius = 0.5;
 
     // keep the light elevated, but not too vertical, so the shadow remains visible
-    directionalLight.position.set(shadowSide * 0.45, shadowSide * 0.9, shadowSide * 0.2);
+    directionalLight.position.set(shadowSide * 0.45, shadowSide * 0.2, shadowSide * 0.2);
 
     directionalLight.shadow.camera.updateProjectionMatrix();
     directionalLight.shadow.needsUpdate = true;
