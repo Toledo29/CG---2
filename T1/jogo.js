@@ -25,7 +25,7 @@ renderer = new THREE.WebGLRenderer();
 // renderer = initRenderer();    // View function in util/utils
 renderer.shadowMap.enabled = true;
 renderer.shadowMapSoft = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
 
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
@@ -126,14 +126,19 @@ function render() {
     aviao.position.y = safeHeight;
   }
 
-helice.rotation.z += 0.1;
-stats.update();
+  helice.rotation.z += 0.1;
   stats.update();
   updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
-  // move directional light target to be opposite side of the plane and follow the airplane
+  // keep directional light moving with airplane on Z and aiming right-to-left
   if (light && light.target && light.userData && light.userData.shadowSide) {
     const side = light.userData.shadowSide;
-    light.target.position.set(aviao.position.x + side, 0, aviao.position.z);
+    light.position.set(
+      -halfPlaneWidth,
+      side * 0.9,
+      aviao.position.z + side * 0.2
+    );
+    light.target.position.set(halfPlaneWidth, 0, aviao.position.z);
+    light.updateMatrixWorld();
     light.target.updateMatrixWorld();
   }
   updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
