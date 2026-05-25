@@ -12,8 +12,8 @@ import {
 import { aviao, helice } from './aviao.js';
 import { updateChunks, removeChunk, recycleChunk } from './planeUpdate.js';
 import { makeCreateChunk } from './plane.js';
-import { getTerrainHeight } from './terrain.js';
 import { createCameraController } from './cameraController.js';
+import { createLights, updateDirectionalShadow } from './light.js';
 import { createLights, updateDirectionalShadow } from './light.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
@@ -24,7 +24,7 @@ renderer = new THREE.WebGLRenderer();
 // renderer = initRenderer();    // View function in util/utils
 renderer.shadowMap.enabled = true;
 renderer.shadowMapSoft = true;
-renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
@@ -40,6 +40,7 @@ const fogColor = 0x87ceeb; // cor da névoa (azul claro)
 let fogDistance = 100; // distância onde a névoa começa a ser aplicada
 scene.background = new THREE.Color(fogColor);
 scene.fog = new THREE.Fog(fogColor, fogDistance, 500);
+light = createLights(scene, fogDistance);
 light = createLights(scene, fogDistance);
 
 // Listen window size changes
@@ -103,7 +104,7 @@ if (fogSlider) {
 
 
 
-updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
+updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk);
 
 render();
 function render() {
@@ -113,19 +114,16 @@ function render() {
   // delegate movement and camera updates to controller
   cameraController.update(delta);
 
-  const terrainHeight = getTerrainHeight(
-    aviao.position.x,
-    aviao.position.z
-  );
-
-  const safeHeight = terrainHeight + 8;
-
-  if (aviao.position.y < safeHeight) {
-    aviao.position.y = safeHeight;
-  }
 
   helice.rotation.z += 0.1;
   stats.update();
+  updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk);
+  // move directional light target to be opposite side of the plane and follow the airplane
+  if (light && light.target && light.userData && light.userData.shadowSide) {
+    const side = light.userData.shadowSide;
+    light.target.position.set(aviao.position.x + side, 0, aviao.position.z);
+    light.target.updateMatrixWorld();
+  }
   updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
   // keep directional light moving with airplane on Z and aiming right-to-left
   if (light && light.target && light.userData && light.userData.shadowSide) {

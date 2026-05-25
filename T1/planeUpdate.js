@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { spawnEnemiesForChunk } from './enemies.js';
 
 // Função para obter a posição no mundo a partir das coordenadas NDC do mouse, projetando um plano no eixo Z
 function getWorldPointAtZPlane(ndcX, ndcY, zValue, camera, mousePlane, raycaster, zPlaneNormal, intersectionPoint) {
@@ -59,30 +60,70 @@ function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
     }
 }
 
-function updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk) {
-    const currentChunk = Math.floor(aviao.position.z / planeDepth);
-    const minChunk = currentChunk - chunksBehind;
-    const maxChunk = currentChunk + chunksAhead;
+function updateChunks(
+    aviao,
+    planeDepth,
+    chunks,
+    chunksAhead,
+    chunksBehind,
+    createChunk
+)
+ {
 
-    // Inicializa chunks que não existem
+    const currentChunk =
+        Math.floor(aviao.position.z / planeDepth);
+
+    const minChunk =
+        currentChunk - chunksBehind;
+
+    const maxChunk =
+        currentChunk + chunksAhead;
+
+    // cria chunks novos
     for (let i = minChunk; i <= maxChunk; i++) {
+
         if (!chunks.has(i)) {
+
             createChunk(i);
         }
     }
 
-    // Recicla chunks: move o chunk mais de trás para a frente quando necessário
-    const chunksArray = Array.from(chunks.keys()).sort((a, b) => a - b);
+    // recicla chunks antigos
+    const chunksArray =
+        Array.from(chunks.keys())
+            .sort((a, b) => a - b);
 
     for (const index of chunksArray) {
+
         if (index < minChunk) {
-            // Encontra o novo índice necessário (maxChunk + 1)
+
             const newIndex = maxChunk + 1;
+
             if (!chunks.has(newIndex)) {
-                const oldChunkGroup = chunks.get(index);
-                recycleChunk(oldChunkGroup, newIndex, newIndex * planeDepth);
+
+                const oldChunkGroup =
+                    chunks.get(index);
+
+                recycleChunk(
+                    oldChunkGroup,
+                    newIndex,
+                    newIndex * planeDepth
+                );
+
                 chunks.delete(index);
+
                 chunks.set(newIndex, oldChunkGroup);
+
+// cria novos inimigos continuamente
+spawnEnemiesForChunk(
+    newIndex,
+    planeDepth,
+    aviao
+);
+
+                // IMPORTANTE:
+                // cria novos inimigos
+                createChunk(newIndex);
             }
         }
     }
