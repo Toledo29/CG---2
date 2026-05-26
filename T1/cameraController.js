@@ -32,6 +32,40 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
   const mousePlane = new THREE.Plane();
   const intersectionPoint = new THREE.Vector3();
 
+  const targetCanvas = document.createElement('canvas');
+  targetCanvas.width = 128;
+  targetCanvas.height = 128;
+  const targetContext = targetCanvas.getContext('2d');
+  targetContext.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+  targetContext.strokeStyle = '#ffb000';
+  targetContext.lineWidth = 8;
+  targetContext.beginPath();
+  targetContext.arc(64, 64, 34, 0, Math.PI * 2);
+  targetContext.stroke();
+  targetContext.beginPath();
+  targetContext.moveTo(64, 18);
+  targetContext.lineTo(64, 42);
+  targetContext.moveTo(64, 86);
+  targetContext.lineTo(64, 110);
+  targetContext.moveTo(18, 64);
+  targetContext.lineTo(42, 64);
+  targetContext.moveTo(86, 64);
+  targetContext.lineTo(110, 64);
+  targetContext.stroke();
+
+  const targetTexture = new THREE.CanvasTexture(targetCanvas);
+  const targetMaterial = new THREE.SpriteMaterial({
+    map: targetTexture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    color: 0xffffff
+  });
+  const targetMarker = new THREE.Sprite(targetMaterial);
+  targetMarker.scale.set(1, 1, 1);
+  targetMarker.renderOrder = 999;
+  scene.add(targetMarker);
+
   window.addEventListener('mousemove', function (event) {
     mouseNDC.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouseNDC.y = -((event.clientY / window.innerHeight) * 2 - 1);
@@ -74,6 +108,8 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     const targetX = THREE.MathUtils.clamp(mouseWorld.x, bounds.minX + settings.screenMargin, bounds.maxX - settings.screenMargin);
     const targetY = THREE.MathUtils.clamp(mouseWorld.y, bounds.minY + settings.screenMargin, bounds.maxY - settings.screenMargin);
 
+    targetMarker.position.set(targetX, targetY, aviao.position.z - 1);
+
     aviao.position.x = lerpAtConstantSpeed(aviao.position.x, targetX, settings.lateralSpeed * delta);
     aviao.position.y = lerpAtConstantSpeed(aviao.position.y, targetY, settings.verticalSpeed * delta);
 
@@ -97,5 +133,5 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     aviao.rotation.x = THREE.MathUtils.lerp(aviao.rotation.x, desiredPitchX, 0.35);
   }
 
-  return { camera, cameraTarget, update, mouseNDC };
+  return { camera, cameraTarget, targetMarker, update, mouseNDC };
 }
