@@ -103,18 +103,10 @@ enemyMesh.traverse((obj) => {
             0
         );
 
-    // vira para direção do movimento
-    enemyMesh.lookAt(
-        enemyMesh.position
-            .clone()
-            .add(direction)
-    );
+    // mantém a frente do inimigo
+// apontada para frente do avião
 
-    // ajuste do modelo
-    if (side === 1) {
-
-        enemyMesh.rotation.y += Math.PI;
-    }
+enemyMesh.rotation.y = Math.PI;
 
     sceneRef.add(enemyMesh);
 
@@ -162,12 +154,6 @@ export function updateEnemies(delta, player) {
                 .multiplyScalar(enemy.speed * delta)
         );
 
-        enemy.mesh.lookAt(
-
-            enemy.mesh.position
-                .clone()
-                .add(enemy.direction)
-        );
 
         enemy.boundingBox.setFromObject(
             enemy.mesh
