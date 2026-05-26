@@ -186,4 +186,7 @@ aviao.add(helice);
 aviao.scale.set(1, 1, 1);
 aviao.position.set(0, 11.5, -70);
 
-export { aviao, helice };
+const playerBoundingBox = new THREE.Box3();
+
+export { aviao, helice, playerBoundingBox };
+

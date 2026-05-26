@@ -59,30 +59,66 @@ function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
     }
 }
 
-function updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk) {
-    const currentChunk = Math.floor(aviao.position.z / planeDepth);
-    const minChunk = currentChunk - chunksBehind;
-    const maxChunk = currentChunk + chunksAhead;
+function updateChunks(
+    aviao,
+    planeDepth,
+    chunks,
+    chunksAhead,
+    chunksBehind,
+    createChunk,
+    scene
+) {
 
-    // Inicializa chunks que não existem
+    const currentChunk =
+        Math.floor(aviao.position.z / planeDepth);
+
+    const minChunk =
+        currentChunk - chunksBehind;
+
+    const maxChunk =
+        currentChunk + chunksAhead;
+
+    // cria chunks novos
     for (let i = minChunk; i <= maxChunk; i++) {
+
         if (!chunks.has(i)) {
+
             createChunk(i);
         }
     }
 
-    // Recicla chunks: move o chunk mais de trás para a frente quando necessário
-    const chunksArray = Array.from(chunks.keys()).sort((a, b) => a - b);
+    // recicla chunks antigos
+    const chunksArray =
+        Array.from(chunks.keys())
+            .sort((a, b) => a - b);
 
     for (const index of chunksArray) {
+
         if (index < minChunk) {
-            // Encontra o novo índice necessário (maxChunk + 1)
+
             const newIndex = maxChunk + 1;
+
             if (!chunks.has(newIndex)) {
-                const oldChunkGroup = chunks.get(index);
-                recycleChunk(oldChunkGroup, newIndex, newIndex * planeDepth);
+
+                const oldChunkGroup =
+                    chunks.get(index);
+
+                recycleChunk(
+                    oldChunkGroup,
+                    newIndex,
+                    newIndex * planeDepth
+                );
+
                 chunks.delete(index);
-                chunks.set(newIndex, oldChunkGroup);
+
+                chunks.set(
+                    newIndex,
+                    oldChunkGroup
+                );
+
+                // IMPORTANTE:
+                // cria novos inimigos
+                createChunk(newIndex);
             }
         }
     }

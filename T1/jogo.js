@@ -1,119 +1,258 @@
+// jogo.js
+
 import * as THREE from 'three';
-import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
+
 import Stats from '../build/jsm/libs/stats.module.js';
+
 import {
   initRenderer,
   initDefaultBasicLight,
-  setDefaultMaterial,
-  InfoBox,
-  onWindowResize,
-  createGroundPlaneWired
+  onWindowResize
 } from "../libs/util/util.js";
 
-import { aviao, helice } from './aviao.js';
-import { updateChunks, removeChunk, recycleChunk } from './planeUpdate.js';
-import { makeCreateChunk } from './plane.js';
-import { getTerrainHeight } from './terrain.js';
-import { createCameraController } from './cameraController.js';
+import {
+  loadEnemyModel,
+  updateEnemies
+} from './enemies.js';
 
-let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
-scene = new THREE.Scene();    // Cria cena
-renderer = initRenderer();    // Inicializa o renderizador
-light = initDefaultBasicLight(scene); // Inicializa luz
+import {
+  initPlayerShooting,
+  updatePlayerShooting,
+  updatePlayerBullets,
+  updateEnemyBullets
+} from './bullets.js';
+
+import {
+  updateCollisions
+} from './collision.js';
+
+import {
+  playerBoundingBox
+} from './aviao.js';
+
+import {
+  aviao,
+  helice
+} from './aviao.js';
+
+import {
+  updateChunks
+} from './planeUpdate.js';
+
+import {
+  makeCreateChunk
+} from './plane.js';
+
+import {
+  getTerrainHeight
+} from './terrain.js';
+
+import {
+  createCameraController
+} from './cameraController.js';
+
+let scene, renderer, camera, light;
+
+scene = new THREE.Scene();
+
+renderer = initRenderer();
+
+light = initDefaultBasicLight(scene);
+
 const clock = new THREE.Clock();
 
-// Cria a câmera e controlador
-const cameraController = createCameraController(scene, renderer, aviao);
+const cameraController =
+  createCameraController(
+    scene,
+    renderer,
+    aviao
+  );
+
 camera = cameraController.camera;
-// Cria Fog
-const fogColor = 0x87ceeb; // cor da névoa (azul claro)
-let fogDistance = 100; // distância onde a névoa começa a ser aplicada
+
+// fog
+const fogColor = 0x87ceeb;
+
 scene.background = new THREE.Color(fogColor);
-scene.fog = new THREE.Fog(fogColor, fogDistance, 500);
 
-// Listen window size changes
-window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
+scene.fog = new THREE.Fog(
+  fogColor,
+  100,
+  500
+);
 
+// resize
+window.addEventListener(
+  'resize',
+  function () {
 
-// Configuração de FPS
-const container = document.getElementById('container');
+    onWindowResize(camera, renderer);
+
+  },
+  false
+);
+
+// stats
+const container =
+  document.getElementById('container');
+
 const stats = new Stats();
+
 container.appendChild(stats.dom);
 
-// Cria constantes para plano do chão
+// terreno
 const planeWidth = 500;
+
 const planeDepth = 150;
+
 const halfPlaneWidth = planeWidth / 2;
+
 const halfPlaneDepth = planeDepth / 2;
 
-
+// avião
 scene.add(aviao);
 
-// cameraTarget é gerenciada pelo controller
-const cameraTarget = cameraController.cameraTarget;
+// carregar inimigo
+try {
 
-// configura variáveis para controle de geração dos chunks
-const cameraFollowZOffset = -20; // distância da camera para o alvo
-const treeCountPerChunk = 400; // quantidade de árvores por chunk
-const minDistance = 4.5; // distância mínima entre as árvores para evitar sobreposição
-const margin = 2; // margem ao redor do chunk
-const maxPlacementAttempts = 10000;
+  await loadEnemyModel(scene);
 
+} catch (e) {
+
+  console.error(
+    'Falha ao carregar inimigos'
+  );
+}
+
+// tiros
+initPlayerShooting(
+  scene,
+  camera,
+  aviao
+);
+
+// chunks
 const chunks = new Map();
-const chunksAhead = 4; // quantidade de chunks gerados à frente do avião
-const chunksBehind = 1; // quantidade de chunks mantidos atrás do avião 
+
+const chunksAhead = 4;
+
+const chunksBehind = 1;
 
 const createChunk = makeCreateChunk({
+
   planeWidth,
+
   planeDepth,
+
   halfPlaneWidth,
+
   halfPlaneDepth,
-  treeCountPerChunk,
-  maxPlacementAttempts,
-  margin,
-  minDistance,
+
+  treeCountPerChunk: 400,
+
+  maxPlacementAttempts: 10000,
+
+  margin: 2,
+
+  minDistance: 4.5,
+
   scene,
+
   chunks
 });
 
-// Camera, mouse mapping and movement are handled by cameraController
-// Configuração do slider de controle da névoa
-const fogSlider = document.getElementById('fogSlider');
-const fogValue = document.getElementById('fogValue');
-if (fogSlider) {
-  fogSlider.addEventListener('input', function (event) {
-    fogDistance = parseFloat(event.target.value);
-    scene.fog.far = fogDistance;
-    fogValue.textContent = fogDistance;
-  });
-}
+updateChunks(
+  aviao,
+  planeDepth,
+  chunks,
+  chunksAhead,
+  chunksBehind,
+  createChunk,
+  scene
+);
 
-
-
-updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
-
+// render
 render();
+
 function render() {
+
   requestAnimationFrame(render);
-  const delta = (clock.getDelta() * 0.6);
 
-  // delegate movement and camera updates to controller
-  cameraController.update(delta);
+  try {
 
-  const terrainHeight = getTerrainHeight(
-    aviao.position.x,
-    aviao.position.z
-  );
+    const delta = clock.getDelta();
 
-  const safeHeight = terrainHeight + 8;
+    // camera
+    cameraController.update(delta);
 
-  if (aviao.position.y < safeHeight) {
-    aviao.position.y = safeHeight;
+    // altura do terreno
+    const terrainHeight =
+      getTerrainHeight(
+        aviao.position.x,
+        aviao.position.z
+      );
+
+    const safeHeight =
+      terrainHeight + 8;
+
+    if (
+      aviao.position.y < safeHeight
+    ) {
+
+      aviao.position.y =
+        safeHeight;
+    }
+
+    // hélice
+    helice.rotation.z += 0.1;
+
+    // fps
+    stats.update();
+
+    // chunks
+    updateChunks(
+      aviao,
+      planeDepth,
+      chunks,
+      chunksAhead,
+      chunksBehind,
+      createChunk,
+      scene
+    );
+
+    // tiros
+    updatePlayerShooting(delta);
+
+    updatePlayerBullets(delta);
+
+    updateEnemyBullets(
+      delta,
+      aviao
+    );
+
+    // inimigos
+    updateEnemies(
+      delta,
+      aviao
+    );
+
+    // colisão
+    updateCollisions(
+      aviao,
+      playerBoundingBox
+    );
+
+    // render
+    renderer.render(
+      scene,
+      camera
+    );
+
+  } catch (e) {
+
+    console.error(
+      'Erro no render:',
+      e
+    );
   }
-
-helice.rotation.z += 0.1;
-stats.update();
-  stats.update();
-  updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
-  renderer.render(scene, camera) // Render scene
 }
