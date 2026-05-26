@@ -67,8 +67,7 @@ function updateChunks(
     chunksAhead,
     chunksBehind,
     createChunk
-)
- {
+) {
 
     const currentChunk =
         Math.floor(aviao.position.z / planeDepth);
@@ -85,6 +84,10 @@ function updateChunks(
         if (!chunks.has(i)) {
 
             createChunk(i);
+        }
+
+        if (i <= currentChunk + 1) {
+            spawnEnemiesForChunk(i, planeDepth, aviao);
         }
     }
 
@@ -113,17 +116,6 @@ function updateChunks(
                 chunks.delete(index);
 
                 chunks.set(newIndex, oldChunkGroup);
-
-// cria novos inimigos continuamente
-spawnEnemiesForChunk(
-    newIndex,
-    planeDepth,
-    aviao
-);
-
-                // IMPORTANTE:
-                // cria novos inimigos
-                createChunk(newIndex);
             }
         }
     }

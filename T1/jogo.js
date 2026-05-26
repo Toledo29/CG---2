@@ -10,11 +10,13 @@ import {
 } from "../libs/util/util.js";
 
 import { aviao, helice } from './aviao.js';
+import { initPlayerShooting, updatePlayerShooting, updatePlayerBullets, updateEnemyBullets } from './bullets.js';
+import { loadEnemyModel, updateEnemies } from './enemies.js';
+import { updateCollisions } from './collision.js';
 import { updateChunks, removeChunk, recycleChunk } from './planeUpdate.js';
 import { makeCreateChunk } from './plane.js';
 import { getTerrainHeight } from './terrain.js';
 import { createCameraController } from './cameraController.js';
-import { createLights, updateDirectionalShadow } from './light.js';
 import { createLights, updateDirectionalShadow } from './light.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
@@ -36,12 +38,13 @@ renderer.setClearColor("rgb(255, 255, 255)");
 // Cria a câmera e controlador
 const cameraController = createCameraController(scene, renderer, aviao);
 camera = cameraController.camera;
+initPlayerShooting(scene, camera, aviao);
+loadEnemyModel(scene).catch((error) => console.error(error));
 // Cria Fog
 const fogColor = 0x87ceeb; // cor da névoa (azul claro)
 let fogDistance = 100; // distância onde a névoa começa a ser aplicada
 scene.background = new THREE.Color(fogColor);
 scene.fog = new THREE.Fog(fogColor, fogDistance, 500);
-light = createLights(scene, fogDistance);
 light = createLights(scene, fogDistance);
 
 // Listen window size changes
@@ -75,6 +78,7 @@ const maxPlacementAttempts = 10000;
 const chunks = new Map();
 const chunksAhead = 4; // quantidade de chunks gerados à frente do avião
 const chunksBehind = 1; // quantidade de chunks mantidos atrás do avião 
+const playerBoundingBox = new THREE.Box3();
 
 const createChunk = makeCreateChunk({
   planeWidth,
@@ -86,7 +90,8 @@ const createChunk = makeCreateChunk({
   margin,
   minDistance,
   scene,
-  chunks
+  chunks,
+  player: aviao
 });
 
 // Camera, mouse mapping and movement are handled by cameraController
@@ -114,6 +119,11 @@ function render() {
 
   // delegate movement and camera updates to controller
   cameraController.update(delta);
+  updatePlayerShooting(delta);
+  updatePlayerBullets(delta);
+  updateEnemyBullets(delta, aviao);
+  updateEnemies(delta, aviao);
+  updateCollisions(aviao, playerBoundingBox);
 
   const terrainHeight = getTerrainHeight(
     aviao.position.x,
@@ -137,20 +147,7 @@ function render() {
       side * 0.9,
       aviao.position.z + side * 0.4
     );
-    light.target.position.set(halfPlaneWidth, 0, aviao.position.z+(side * 0.4));
-    light.updateMatrixWorld();
-    light.target.updateMatrixWorld();
-  }
-  updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
-  // keep directional light moving with airplane on Z and aiming right-to-left
-  if (light && light.target && light.userData && light.userData.shadowSide) {
-    const side = light.userData.shadowSide;
-    light.position.set(
-      -halfPlaneWidth,
-      side * 0.9,
-      aviao.position.z + side * 0.4
-    );
-    light.target.position.set(halfPlaneWidth, 0, aviao.position.z+(side * 0.4));
+    light.target.position.set(halfPlaneWidth, 0, aviao.position.z + (side * 0.4));
     light.updateMatrixWorld();
     light.target.updateMatrixWorld();
   }

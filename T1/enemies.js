@@ -8,6 +8,7 @@ import * as SkeletonUtils from '../build/jsm/utils/SkeletonUtils.js';
 import { createEnemyBullet } from './bullets.js';
 
 export const enemies = [];
+const spawnedEnemyChunks = new Set();
 
 let enemyModel;
 
@@ -59,19 +60,11 @@ export function spawnEnemiesForChunk(
 
     if (!enemyModel) return;
 
-    spawnEnemy(
-    chunkIndex,
-    planeDepth,
-    player,
-    -1
-);
+    if (spawnedEnemyChunks.has(chunkIndex)) return;
+    spawnedEnemyChunks.add(chunkIndex);
 
-spawnEnemy(
-    chunkIndex,
-    planeDepth,
-    player,
-    1
-);
+    spawnEnemy(chunkIndex, planeDepth, player, -1);
+    spawnEnemy(chunkIndex, planeDepth, player, 1);
 }
 
 function spawnEnemy(
@@ -96,15 +89,13 @@ function spawnEnemy(
         }
     });
 
-    
+
 
     // posição lateral
     const x = side * 260;
 
-    // posição à frente
-    const z =
-        chunkIndex * planeDepth +
-        THREE.MathUtils.randFloat(-50, 50);
+    // spawn no trecho do chunk à frente do avião, não na posição atual dele
+    const z = chunkIndex * planeDepth + planeDepth * 0.75 + THREE.MathUtils.randFloat(-20, 20);
 
     // mesma altura do avião
     const y = player.position.y;
@@ -141,8 +132,7 @@ function spawnEnemy(
 
         deathTimer: 0,
 
-        shootTimer:
-            THREE.MathUtils.randFloat(0, 2)
+        shootTimer: THREE.MathUtils.randFloat(0, 1)
     });
 }
 
@@ -173,16 +163,18 @@ export function updateEnemies(delta, player) {
 
         enemy.shootTimer += delta;
 
-        if (enemy.shootTimer >= 3) {
+        if (enemy.shootTimer >= 1) {
 
             enemy.shootTimer = 0;
 
             createEnemyBullet(enemy, player);
         }
 
-        if (
-            Math.abs(enemy.mesh.position.x) > 350
-        ) {
+        if (enemy.direction.x > 0 && enemy.mesh.position.x > player.position.x + 40) {
+            removeEnemy(i);
+        }
+
+        if (enemy.direction.x < 0 && enemy.mesh.position.x < player.position.x - 40) {
 
             removeEnemy(i);
         }

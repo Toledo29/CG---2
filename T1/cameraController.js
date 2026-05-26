@@ -83,7 +83,7 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     cameraXOffset: 0.6,
     cameraYOffset: 0.8,
     cameraFollowZOffset: -20,
-    forwardSpeed: 0.4,
+    forwardSpeed: 1,
     screenMargin: 4.0
   }, opts);
 

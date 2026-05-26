@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { generateTreesForChunk } from './trees.js';
 import { createTerrain, getTerrainHeight } from './terrain.js';
-import { spawnEnemiesForChunk } from './enemies.js';
 
 // Factory that returns a createChunk function bound to provided dependencies
     function makeCreateChunk(deps) {
@@ -67,11 +66,6 @@ import { spawnEnemiesForChunk } from './enemies.js';
 
         scene.add(chunkGroup);
         chunks.set(chunkIndex, chunkGroup);
-        spawnEnemiesForChunk(
-    chunkIndex,
-    planeDepth,
-    deps.player
-);
     };
 }
 
