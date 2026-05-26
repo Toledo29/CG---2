@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { onWindowResize } from "../libs/util/util.js";
 import { getWorldPointAtZPlane, getScreenBoundsAtZPlane } from './planeUpdate.js';
+import { setBulletSpeed, setPlayerShootInterval } from './bullets.js';
+import { setEnemySpeedMultiplier } from './enemies.js';
 
 function lerpAtConstantSpeed(current, target, maxStep) {
   const distance = target - current;
@@ -73,6 +75,51 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
 
   window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
 
+  window.addEventListener('keydown', (event) => {
+
+    // velocidade lenta
+    if (event.key === '1') {
+
+      currentSpeed = 0.08;
+
+      speedMultiplier = 0.6;
+
+      setEnemySpeedMultiplier(0.6);
+
+      // tiro mais lento
+      setBulletSpeed(120);
+      setPlayerShootInterval(0.18);
+    }
+
+    // velocidade normal
+    if (event.key === '2') {
+
+      currentSpeed = 0.45;
+
+      speedMultiplier = 1;
+
+      setEnemySpeedMultiplier(1);
+
+      // tiro normal
+      setBulletSpeed(180);
+      setPlayerShootInterval(0.12);
+    }
+
+    // velocidade rápida
+    if (event.key === '3') {
+
+      currentSpeed = 1.4;
+
+      speedMultiplier = 1.8;
+
+      setEnemySpeedMultiplier(1.8);
+
+      // tiro rápido
+      setBulletSpeed(320);
+      setPlayerShootInterval(0.08);
+    }
+  });
+
   const settings = Object.assign({
     maxRollDeg: 45,
     maxPitchDeg: 20,
@@ -87,11 +134,16 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     screenMargin: 4.0
   }, opts);
 
+  let currentSpeed = settings.forwardSpeed;
+
+  // multiplicador geral de velocidade
+  let speedMultiplier = 1;
+
   function update(delta) {
     const maxRollZ = THREE.MathUtils.degToRad(settings.maxRollDeg);
 
-    // aviao forward
-    aviao.position.z += settings.forwardSpeed;
+    // aviao forward (aplica currentSpeed * multiplier)
+    aviao.position.z += currentSpeed * speedMultiplier;
 
     // camera target follows aviao
     cameraTarget.position.z = aviao.position.z;

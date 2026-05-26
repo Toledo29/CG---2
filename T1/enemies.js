@@ -14,6 +14,12 @@ let enemyModel;
 
 let sceneRef;
 
+export let ENEMY_SPEED_MULTIPLIER = 2;
+
+export function setEnemySpeedMultiplier(v) {
+    ENEMY_SPEED_MULTIPLIER = v;
+}
+
 const loader = new GLTFLoader();
 
 export async function loadEnemyModel(scene) {
@@ -30,7 +36,7 @@ export async function loadEnemyModel(scene) {
 
                 enemyModel = gltf.scene;
 
-                enemyModel.scale.set(3, 3, 3);
+                enemyModel.scale.set(2, 2, 2);
 
                 console.log('Inimigo carregado');
 
@@ -51,6 +57,7 @@ export async function loadEnemyModel(scene) {
         );
     });
 }
+
 
 export function spawnEnemiesForChunk(
     chunkIndex,
@@ -76,97 +83,50 @@ function spawnEnemy(
 
     if (!enemyModel) return;
 
-    const enemyMesh =
-        SkeletonUtils.clone(enemyModel);
+    const enemyMesh = SkeletonUtils.clone(enemyModel);
 
-    // materiais independentes
     enemyMesh.traverse((obj) => {
-
-        if (obj.isMesh) {
-
-            obj.material =
-                obj.material.clone();
-        }
+        if (obj.isMesh) obj.material = obj.material.clone();
     });
 
-
-
-    // posição lateral
     const x = side * 260;
-
-    // spawn no trecho do chunk à frente do avião, não na posição atual dele
     const z = chunkIndex * planeDepth + planeDepth * 0.75 + THREE.MathUtils.randFloat(-20, 20);
-
-    // mesma altura do avião
     const y = player.position.y;
 
     enemyMesh.position.set(x, y, z);
 
-    // inimigo atravessa lateralmente
-    const direction =
-        new THREE.Vector3(
-            -side,
-            0,
-            0
-        );
-
-    // frente alinhada com avião
+    const direction = new THREE.Vector3(-side, 0, 0);
     enemyMesh.rotation.y = 0;
 
     sceneRef.add(enemyMesh);
 
     enemies.push({
-
         mesh: enemyMesh,
-
         direction,
-
-        speed: THREE.MathUtils.randFloat(
-            15,
-            25
-        ),
-
+        speed: THREE.MathUtils.randFloat(15, 25) * ENEMY_SPEED_MULTIPLIER,
         boundingBox: new THREE.Box3(),
-
         isDead: false,
-
         deathTimer: 0,
-
         shootTimer: THREE.MathUtils.randFloat(0, 1)
     });
 }
 
 export function updateEnemies(delta, player) {
-
     for (let i = enemies.length - 1; i >= 0; i--) {
-
         const enemy = enemies[i];
 
         if (enemy.isDead) {
-
             updateDeath(enemy, delta, i);
-
             continue;
         }
 
-        enemy.mesh.position.add(
+        enemy.mesh.position.add(enemy.direction.clone().multiplyScalar(enemy.speed * delta));
 
-            enemy.direction
-                .clone()
-                .multiplyScalar(enemy.speed * delta)
-        );
-
-
-        enemy.boundingBox.setFromObject(
-            enemy.mesh
-        );
+        enemy.boundingBox.setFromObject(enemy.mesh);
 
         enemy.shootTimer += delta;
-
         if (enemy.shootTimer >= 1) {
-
             enemy.shootTimer = 0;
-
             createEnemyBullet(enemy, player);
         }
 
@@ -175,11 +135,20 @@ export function updateEnemies(delta, player) {
         }
 
         if (enemy.direction.x < 0 && enemy.mesh.position.x < player.position.x - 40) {
-
             removeEnemy(i);
         }
     }
 }
+
+// convenience: spawn enemies directly in front of player by mapping Z to a chunk
+export function spawnEnemiesInFront(player, planeDepth, distanceAhead = planeDepth) {
+    if (!enemyModel) return;
+    const targetZ = player.position.z + distanceAhead;
+    const chunkIndex = Math.floor(targetZ / planeDepth);
+    spawnEnemiesForChunk(chunkIndex, planeDepth, player);
+}
+
+
 
 function updateDeath(enemy, delta, index) {
 

@@ -13,6 +13,10 @@ let shootCooldown = 0;
 
 const playerShootInterval = 0.12;
 export let playerBulletSpeed = 180;
+export function setPlayerShootInterval(v) {
+    // v in seconds between shots
+    playerShootInterval = v;
+}
 
 export function initPlayerShooting(scene, camera, aviao) {
 
