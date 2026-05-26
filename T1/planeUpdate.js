@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { spawnEnemiesForChunk } from './enemies.js';
 
 // Função para obter a posição no mundo a partir das coordenadas NDC do mouse, projetando um plano no eixo Z
 function getWorldPointAtZPlane(ndcX, ndcY, zValue, camera, mousePlane, raycaster, zPlaneNormal, intersectionPoint) {
@@ -65,9 +66,9 @@ function updateChunks(
     chunks,
     chunksAhead,
     chunksBehind,
-    createChunk,
-    scene
-) {
+    createChunk
+)
+ {
 
     const currentChunk =
         Math.floor(aviao.position.z / planeDepth);
@@ -111,10 +112,14 @@ function updateChunks(
 
                 chunks.delete(index);
 
-                chunks.set(
-                    newIndex,
-                    oldChunkGroup
-                );
+                chunks.set(newIndex, oldChunkGroup);
+
+// cria novos inimigos continuamente
+spawnEnemiesForChunk(
+    newIndex,
+    planeDepth,
+    aviao
+);
 
                 // IMPORTANTE:
                 // cria novos inimigos

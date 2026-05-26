@@ -15,7 +15,8 @@ import { spawnEnemiesForChunk } from './enemies.js';
             margin,
             minDistance,
             scene,
-            chunks
+            chunks,
+            player
         } = deps;
 
     return function createChunk(chunkIndex) {
@@ -66,7 +67,11 @@ import { spawnEnemiesForChunk } from './enemies.js';
 
         scene.add(chunkGroup);
         chunks.set(chunkIndex, chunkGroup);
-        spawnEnemiesForChunk(chunkIndex, planeDepth);
+        spawnEnemiesForChunk(
+    chunkIndex,
+    planeDepth,
+    deps.player
+);
     };
 }
 

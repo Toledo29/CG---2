@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { onWindowResize } from "../libs/util/util.js";
 import { getWorldPointAtZPlane, getScreenBoundsAtZPlane } from './planeUpdate.js';
+import { setBulletSpeed } from './bullets.js';
 
 function lerpAtConstantSpeed(current, target, maxStep) {
   const distance = target - current;
@@ -38,6 +39,44 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
   });
 
   window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
+ 
+
+    window.addEventListener('keydown', (event) => {
+
+    // velocidade lenta
+    if (event.key === '1') {
+
+        currentSpeed = 0.08;
+
+        speedMultiplier = 0.6;
+
+        // tiro mais lento
+        setBulletSpeed(120);
+    }
+
+    // velocidade normal
+    if (event.key === '2') {
+
+        currentSpeed = 0.45;
+
+        speedMultiplier = 1;
+
+        // tiro normal
+        setBulletSpeed(180);
+    }
+
+    // velocidade rápida
+    if (event.key === '3') {
+
+        currentSpeed = 1.4;
+
+        speedMultiplier = 1.8;
+
+        // tiro rápido
+        setBulletSpeed(320);
+    }
+});
+
 
   const settings = Object.assign({
     maxRollDeg: 45,
@@ -51,11 +90,17 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     screenMargin: 4.0
   }, opts);
 
+  // velocidade atual do avião
+let currentSpeed = settings.forwardSpeed;
+
+// multiplicador geral de velocidade
+let speedMultiplier = 1;
+
   function update(delta) {
     const maxRollZ = THREE.MathUtils.degToRad(settings.maxRollDeg);
 
     // aviao forward
-    aviao.position.z += settings.forwardSpeed;
+    aviao.position.z += currentSpeed;
 
     // camera target follows aviao
     cameraTarget.position.z = aviao.position.z;
@@ -72,8 +117,12 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     const targetX = THREE.MathUtils.clamp(mouseWorld.x, bounds.minX + settings.screenMargin, bounds.maxX - settings.screenMargin);
     const targetY = THREE.MathUtils.clamp(mouseWorld.y, bounds.minY + settings.screenMargin, bounds.maxY - settings.screenMargin);
 
-    aviao.position.x = lerpAtConstantSpeed(aviao.position.x, targetX, settings.lateralSpeed * delta);
-    aviao.position.y = lerpAtConstantSpeed(aviao.position.y, targetY, settings.verticalSpeed * delta);
+    aviao.position.x = lerpAtConstantSpeed(aviao.position.x, targetX, settings.lateralSpeed *
+speedMultiplier *
+delta);
+    aviao.position.y = lerpAtConstantSpeed(aviao.position.y, targetY, settings.verticalSpeed *
+speedMultiplier *
+delta);
 
     // inclina ate 45 graus com movimento lateral e estabiliza ao cessar movimento
     const lateralDelta = targetX - aviao.position.x;

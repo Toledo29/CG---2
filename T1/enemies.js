@@ -51,51 +51,67 @@ export async function loadEnemyModel(scene) {
     });
 }
 
-export function spawnEnemiesForChunk(chunkIndex, planeDepth) {
+export function spawnEnemiesForChunk(
+    chunkIndex,
+    planeDepth,
+    player
+) {
 
     if (!enemyModel) return;
 
-    for (let i = 0; i < 2; i++) {
+    spawnEnemy(
+    chunkIndex,
+    planeDepth,
+    player,
+    -1
+);
 
-        spawnEnemy(chunkIndex, planeDepth);
-    }
+spawnEnemy(
+    chunkIndex,
+    planeDepth,
+    player,
+    1
+);
 }
 
-function spawnEnemy(chunkIndex, planeDepth) {
+function spawnEnemy(
+    chunkIndex,
+    planeDepth,
+    player,
+    side
+) {
 
     if (!enemyModel) return;
 
     const enemyMesh =
         SkeletonUtils.clone(enemyModel);
-        
-        // clona materiais individualmente
-enemyMesh.traverse((obj) => {
 
-    if (obj.isMesh) {
+    // materiais independentes
+    enemyMesh.traverse((obj) => {
 
-        obj.material = obj.material.clone();
-    }
-});
+        if (obj.isMesh) {
 
-    // escolhe lado da tela
-    const side =
-        Math.random() < 0.5 ? -1 : 1;
+            obj.material =
+                obj.material.clone();
+        }
+    });
+
+    
 
     // posição lateral
     const x = side * 260;
 
-    // posição à frente do player
+    // posição à frente
     const z =
         chunkIndex * planeDepth +
         THREE.MathUtils.randFloat(-50, 50);
 
-    // altura
-    const y =
-        THREE.MathUtils.randFloat(12, 28);
+    // mesma altura do avião
+    const y = player.position.y;
 
     enemyMesh.position.set(x, y, z);
 
-    // atravessa a tela
+    // inimigo atravessa lateralmente
     const direction =
         new THREE.Vector3(
             -side,
@@ -103,10 +119,8 @@ enemyMesh.traverse((obj) => {
             0
         );
 
-    // mantém a frente do inimigo
-// apontada para frente do avião
-
-enemyMesh.rotation.y = Math.PI;
+    // frente alinhada com avião
+    enemyMesh.rotation.y = 0;
 
     sceneRef.add(enemyMesh);
 
@@ -127,10 +141,8 @@ enemyMesh.rotation.y = Math.PI;
 
         deathTimer: 0,
 
-        shootTimer: THREE.MathUtils.randFloat(
-            0,
-            2
-        )
+        shootTimer:
+            THREE.MathUtils.randFloat(0, 2)
     });
 }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 
+
 export const playerBullets = [];
 export const enemyBullets = [];
 
@@ -11,6 +12,7 @@ let isShooting = false;
 let shootCooldown = 0;
 
 const playerShootInterval = 0.12;
+export let playerBulletSpeed = 180;
 
 export function initPlayerShooting(scene, camera, aviao) {
 
@@ -47,28 +49,45 @@ export function updatePlayerShooting(delta) {
 
 export function createPlayerBullet() {
 
-    const geometry = new THREE.PlaneGeometry(0.3, 2);
+    // retângulo alongado
+    const geometry =
+        new THREE.BoxGeometry(
+            0.25, // largura
+            0.25, // altura
+            3.5   // comprimento
+        );
 
-    const material = new THREE.MeshBasicMaterial({
-        color: 0xffaa00,
-        side: THREE.DoubleSide
-    });
+    const material =
+        new THREE.MeshBasicMaterial({
 
-    const mesh = new THREE.Mesh(geometry, material);
+            color: 0xffff00
+        });
 
-    mesh.position.copy(aviaoRef.position);
+    const mesh =
+        new THREE.Mesh(
+            geometry,
+            material
+        );
 
-    mesh.position.z += 4;
+    // posição do avião
+    mesh.position.copy(
+        aviaoRef.position
+    );
+
+    // sai da frente do avião
+    mesh.position.z += 5;
 
     const bullet = {
 
         mesh,
 
-        direction: new THREE.Vector3(0, 0, 1),
+        direction:
+            new THREE.Vector3(0, 0, 1),
 
-        speed: 180,
+        speed: playerBulletSpeed,
 
-        boundingBox: new THREE.Box3()
+        boundingBox:
+            new THREE.Box3()
     };
 
     sceneRef.add(mesh);
@@ -78,13 +97,23 @@ export function createPlayerBullet() {
 
 export function createEnemyBullet(enemy, player) {
 
-    const geometry = new THREE.ConeGeometry(0.25, 1.5, 8);
+    const geometry =
+    new THREE.ConeGeometry(
+
+        0.18, // largura
+
+        4,    // comprimento
+
+        8
+    );
 
     const material = new THREE.MeshBasicMaterial({
         color: 0xff0000
     });
 
     const mesh = new THREE.Mesh(geometry, material);
+    // deixa o cone apontado para frente
+mesh.rotation.x = Math.PI / 2;
 
     mesh.position.copy(enemy.mesh.position);
 
@@ -125,9 +154,18 @@ export function updatePlayerBullets(delta) {
             )
         );
 
-        bullet.mesh.lookAt(cameraRef.position);
+        
 
-        bullet.boundingBox.setFromObject(bullet.mesh);
+        bullet.boundingBox.setFromCenterAndSize(
+
+    bullet.mesh.position,
+
+    new THREE.Vector3(
+        0.4,
+        0.4,
+        4
+    )
+);
 
         if (
             bullet.mesh.position.distanceTo(aviaoRef.position) > 300
@@ -171,4 +209,9 @@ function removeBullet(array, index) {
     bullet.mesh.material.dispose();
 
     array.splice(index, 1);
+}
+
+export function setBulletSpeed(speed) {
+
+    playerBulletSpeed = speed;
 }

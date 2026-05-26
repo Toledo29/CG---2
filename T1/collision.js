@@ -42,27 +42,48 @@ function playerVsEnemyBullets(playerBoundingBox) {
 
 function playerBulletsVsEnemies() {
 
-    for (let i = playerBullets.length - 1; i >= 0; i--) {
+    for (
+        let i = playerBullets.length - 1;
+        i >= 0;
+        i--
+    ) {
 
         const bullet = playerBullets[i];
 
-        for (let j = enemies.length - 1; j >= 0; j--) {
+        for (
+            let j = enemies.length - 1;
+            j >= 0;
+            j--
+        ) {
 
             const enemy = enemies[j];
 
+            // ignora mortos
             if (enemy.isDead) continue;
 
+            // atualiza bounding box
+            enemy.boundingBox.setFromObject(
+                enemy.mesh
+            );
+
+            // colisão
             if (
+
                 bullet.boundingBox.intersectsBox(
                     enemy.boundingBox
                 )
             ) {
 
+                // mata só esse inimigo
                 enemy.isDead = true;
 
-                bullet.mesh.parent.remove(bullet.mesh);
+                // remove tiro
+                bullet.mesh.parent.remove(
+                    bullet.mesh
+                );
 
                 bullet.mesh.geometry.dispose();
+
                 bullet.mesh.material.dispose();
 
                 playerBullets.splice(i, 1);

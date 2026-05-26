@@ -158,7 +158,8 @@ const createChunk = makeCreateChunk({
 
   scene,
 
-  chunks
+  chunks,
+  player: aviao
 });
 
 updateChunks(
