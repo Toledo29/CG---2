@@ -41,6 +41,8 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
 
   const settings = Object.assign({
     maxRollDeg: 45,
+    maxPitchDeg: 20,
+    pitchResponse: 4,
     lateralResponse: 8.0,
     lateralSpeed: 35,
     verticalSpeed: 18,
@@ -83,6 +85,16 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
       maxRollZ
     );
     aviao.rotation.z = THREE.MathUtils.lerp(aviao.rotation.z, desiredRollZ, 0.12);
+
+    // pitch (rotation X) based on vertical movement: nose up when ascending
+    const maxPitchX = THREE.MathUtils.degToRad(settings.maxPitchDeg);
+    const verticalDelta = targetY - aviao.position.y;
+    const desiredPitchX = THREE.MathUtils.clamp(
+      -(verticalDelta / Math.max(0.0001, settings.pitchResponse)) * maxPitchX,
+      -maxPitchX,
+      maxPitchX
+    );
+    aviao.rotation.x = THREE.MathUtils.lerp(aviao.rotation.x, desiredPitchX, 0.35);
   }
 
   return { camera, cameraTarget, update, mouseNDC };
