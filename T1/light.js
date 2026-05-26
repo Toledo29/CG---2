@@ -14,7 +14,9 @@ function updateDirectionalShadow(directionalLight, fogDistance) {
     directionalLight.shadow.camera.bottom = -shadowSide / 2;
     directionalLight.shadow.camera.near = 1;
     directionalLight.shadow.camera.far = Math.max(fogDistance * 2, 1200);
-    directionalLight.shadow.radius = 0.5;
+    // reduce acne/shimmer and soften shadows (effective with PCFSoftShadowMap)
+    directionalLight.shadow.bias = -0.0005;
+    directionalLight.shadow.radius = 0.3;
 
     // keep the light elevated, but not too vertical, so the shadow remains visible
     directionalLight.position.set(shadowSide * 0.45, shadowSide * 0.2, shadowSide * 0.2);

@@ -133,9 +133,9 @@ function render() {
     light.position.set(
       -halfPlaneWidth,
       side * 0.9,
-      aviao.position.z + side * 0.2
+      aviao.position.z + side * 0.4
     );
-    light.target.position.set(halfPlaneWidth, 0, aviao.position.z);
+    light.target.position.set(halfPlaneWidth, 0, aviao.position.z+(side * 0.4));
     light.updateMatrixWorld();
     light.target.updateMatrixWorld();
   }
