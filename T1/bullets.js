@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 
-
 export const playerBullets = [];
 export const enemyBullets = [];
 
@@ -11,12 +10,34 @@ let aviaoRef;
 let isShooting = false;
 let shootCooldown = 0;
 
-const playerShootInterval = 0.12;
+let playerShootInterval = 0.12;
 export let playerBulletSpeed = 180;
+
 export function setPlayerShootInterval(v) {
-    // v in seconds between shots
+    // v em segundos entre tiros
     playerShootInterval = v;
 }
+
+// NOVO: ponto (x, y) para onde o player está mirando (mesmo alvo do reticulo),
+// atualizado a cada frame pelo cameraController.
+let aimX = 0;
+let aimY = 11.5;
+
+export function setPlayerAimPoint(x, y) {
+    aimX = x;
+    aimY = y;
+}
+
+// NOVO: geometria/material compartilhados entre todos os tiros do player e
+// entre todos os tiros dos inimigos. Antes cada tiro criava um BoxGeometry/
+// ConeGeometry e um Material novos e depois os destruía (dispose) ao remover
+// o tiro — isso gera criação/descarte de buffers na GPU várias vezes por
+// segundo (até ~12x/s no modo rápido) e prejudica bastante o FPS.
+const playerBulletGeometry = new THREE.BoxGeometry(0.25, 0.25, 3.5);
+const playerBulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+
+const enemyBulletGeometry = new THREE.ConeGeometry(0.18, 4, 8);
+const enemyBulletMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
 export function initPlayerShooting(scene, camera, aviao) {
 
@@ -53,45 +74,43 @@ export function updatePlayerShooting(delta) {
 
 export function createPlayerBullet() {
 
-    // retângulo alongado
-    const geometry =
-        new THREE.BoxGeometry(
-            0.25, // largura
-            0.25, // altura
-            3.5   // comprimento
-        );
-
-    const material =
-        new THREE.MeshBasicMaterial({
-
-            color: 0xffff00
-        });
-
-    const mesh =
-        new THREE.Mesh(
-            geometry,
-            material
-        );
+    const mesh = new THREE.Mesh(playerBulletGeometry, playerBulletMaterial);
 
     // posição do avião
-    mesh.position.copy(
-        aviaoRef.position
-    );
+    mesh.position.copy(aviaoRef.position);
 
     // sai da frente do avião
     mesh.position.z += 5;
+
+    // CORRIGIDO: antes a direção era sempre (0,0,1), ignorando o target.
+    // Agora calculamos a direção usando o ponto mirado pelo mouse (aimX, aimY),
+    // projetado bem à frente no eixo Z, para o tiro seguir de fato na direção
+    // do reticulo/target.
+    const aimPoint = new THREE.Vector3(
+        aimX,
+        aimY,
+        aviaoRef.position.z + 200
+    );
+
+    const direction = new THREE.Vector3()
+        .subVectors(aimPoint, mesh.position)
+        .normalize();
+
+    // rotaciona o retângulo do tiro para apontar na direção do disparo
+    mesh.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 0, 1),
+        direction
+    );
 
     const bullet = {
 
         mesh,
 
-        direction:
-            new THREE.Vector3(0, 0, 1),
+        direction,
 
         speed: playerBulletSpeed,
 
-        boundingBox:
-            new THREE.Box3()
+        boundingBox: new THREE.Box3()
     };
 
     sceneRef.add(mesh);
@@ -101,23 +120,10 @@ export function createPlayerBullet() {
 
 export function createEnemyBullet(enemy, player) {
 
-    const geometry =
-    new THREE.ConeGeometry(
+    const mesh = new THREE.Mesh(enemyBulletGeometry, enemyBulletMaterial);
 
-        0.18, // largura
-
-        4,    // comprimento
-
-        8
-    );
-
-    const material = new THREE.MeshBasicMaterial({
-        color: 0xff0000
-    });
-
-    const mesh = new THREE.Mesh(geometry, material);
     // deixa o cone apontado para frente
-mesh.rotation.x = Math.PI / 2;
+    mesh.rotation.x = Math.PI / 2;
 
     mesh.position.copy(enemy.mesh.position);
 
@@ -158,18 +164,16 @@ export function updatePlayerBullets(delta) {
             )
         );
 
-        
-
         bullet.boundingBox.setFromCenterAndSize(
 
-    bullet.mesh.position,
+            bullet.mesh.position,
 
-    new THREE.Vector3(
-        0.4,
-        0.4,
-        4
-    )
-);
+            new THREE.Vector3(
+                0.4,
+                0.4,
+                4
+            )
+        );
 
         if (
             bullet.mesh.position.distanceTo(aviaoRef.position) > 300
@@ -209,8 +213,9 @@ function removeBullet(array, index) {
 
     sceneRef.remove(bullet.mesh);
 
-    bullet.mesh.geometry.dispose();
-    bullet.mesh.material.dispose();
+    // NOTA: geometria e material agora são compartilhados entre todos os
+    // tiros, então NÃO podem ser "dispose"ados aqui — isso quebraria os
+    // outros tiros que ainda usam o mesmo geometry/material.
 
     array.splice(index, 1);
 }

@@ -25,12 +25,18 @@ const clock = new THREE.Clock();
 
 renderer = new THREE.WebGLRenderer();
 // renderer = initRenderer();    // View function in util/utils
+
+// CORRIGIDO: em telas 4K/retina o devicePixelRatio pode passar de 2 ou 3,
+// fazendo o WebGL renderizar muito mais pixels do que o necessário (grande
+// impacto no FPS sem ganho visual perceptível). Limitamos a no máximo 2.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
 renderer.shadowMap.enabled = true;
-renderer.shadowMapSoft = true;
-renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
+// CORRIGIDO: PCFShadowMap -> PCFSoftShadowMap para sombras com borda suave
+// (a propriedade shadow.radius só tem efeito com o soft shadow map).
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
 document.getElementById("webgl-output").appendChild(renderer.domElement);
 
 renderer.setClearColor("rgb(255, 255, 255)");
@@ -115,7 +121,11 @@ updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, 
 render();
 function render() {
   requestAnimationFrame(render);
-  const delta = (clock.getDelta() * 0.6);
+
+  // CORRIGIDO: limita o delta máximo (clamp) para evitar que um engasgo/lag
+  // spike (troca de aba, GC pesado etc) gere um "salto" grande de uma vez só
+  // — isso também ajudava a causar o bug de chunks/inimigos pulando posições.
+  const delta = Math.min(clock.getDelta() * 0.6, 0.05);
 
   // delegate movement and camera updates to controller
   cameraController.update(delta);

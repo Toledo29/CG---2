@@ -57,6 +57,10 @@ function createTerrain(
 
     vertices.needsUpdate = true;
 
+    // CORRIGIDO: normais nunca eram recalculadas após deslocar a altura dos
+    // vértices, então o terreno recebia luz como se fosse totalmente plano,
+    // deixando encostas/relevo com sombreamento incorreto.
+    geometry.computeVertexNormals();
 
     const material = new THREE.MeshLambertMaterial({
         color: 0x4f7942

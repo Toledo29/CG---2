@@ -20,6 +20,12 @@ export function setEnemySpeedMultiplier(v) {
     ENEMY_SPEED_MULTIPLIER = v;
 }
 
+export let ENEMY_SPAWN_PAIRS = 1;
+
+export function setEnemySpawnPairs(v) {
+    ENEMY_SPAWN_PAIRS = v;
+}
+
 const loader = new GLTFLoader();
 
 export async function loadEnemyModel(scene) {
@@ -70,8 +76,12 @@ export function spawnEnemiesForChunk(
     if (spawnedEnemyChunks.has(chunkIndex)) return;
     spawnedEnemyChunks.add(chunkIndex);
 
-    spawnEnemy(chunkIndex, planeDepth, player, -1);
-    spawnEnemy(chunkIndex, planeDepth, player, 1);
+    const pairs = Math.max(1, Math.round(ENEMY_SPAWN_PAIRS));
+
+    for (let p = 0; p < pairs; p++) {
+        spawnEnemy(chunkIndex, planeDepth, player, -1);
+        spawnEnemy(chunkIndex, planeDepth, player, 1);
+    }
 }
 
 function spawnEnemy(
@@ -90,7 +100,13 @@ function spawnEnemy(
     });
 
     const x = side * 260;
-    const z = chunkIndex * planeDepth + planeDepth * 0.75 + THREE.MathUtils.randFloat(-20, 20);
+
+    // CORRIGIDO: voltei a calcular o Z em cima do chunk (mecanismo que já
+    // funcionava, sem risco de "clustering"), só que com um deslocamento
+    // maior dentro do chunk (1.5x em vez de 0.75x) para garantir que o
+    // inimigo nasça mais longe do avião.
+    const z = chunkIndex * planeDepth + planeDepth * 1.5 + THREE.MathUtils.randFloat(-20, 20);
+
     const y = player.position.y;
 
     enemyMesh.position.set(x, y, z);
@@ -103,7 +119,7 @@ function spawnEnemy(
     enemies.push({
         mesh: enemyMesh,
         direction,
-        speed: THREE.MathUtils.randFloat(15, 25) * ENEMY_SPEED_MULTIPLIER,
+        baseSpeed: THREE.MathUtils.randFloat(15, 25),
         boundingBox: new THREE.Box3(),
         isDead: false,
         deathTimer: 0,
@@ -120,7 +136,9 @@ export function updateEnemies(delta, player) {
             continue;
         }
 
-        enemy.mesh.position.add(enemy.direction.clone().multiplyScalar(enemy.speed * delta));
+        const currentSpeed = enemy.baseSpeed * ENEMY_SPEED_MULTIPLIER;
+
+        enemy.mesh.position.add(enemy.direction.clone().multiplyScalar(currentSpeed * delta));
 
         enemy.boundingBox.setFromObject(enemy.mesh);
 
