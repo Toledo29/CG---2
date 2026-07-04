@@ -75,11 +75,6 @@ function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
 
         const child = oldChunkGroup.children[i];
 
-        if (child.userData && child.userData.isWater) {
-            child.position.z = chunkCenterZ;
-            continue;
-        }
-
         const instancedMesh = child;
         const { xs, zLocals, scales, yOffsetFactor } = instancedMesh.userData;
 

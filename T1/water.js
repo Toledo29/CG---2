@@ -1,103 +1,52 @@
 import * as THREE from 'three';
+import { Water } from '../build/jsm/objects/Water.js';
 import { WATER_LEVEL } from './terrain.js';
 
-const waterUniforms = {
-    uTime: { value: 0 },
-    uWaterColor: { value: new THREE.Color(0x2e86ab) },
-    uWaterColorDeep: { value: new THREE.Color(0x0c2d47) },
-    fogColor: { value: new THREE.Color(0x87ceeb) },
-    fogNear: { value: 100 },
-    fogFar: { value: 500 }
-};
+let water = null;
 
-const waterVertexShader = `
-    uniform float uTime;
+function createWater(width, depthCoverage) {
 
-    varying vec2 vUv;
-    varying float vWave;
-    varying vec3 vWorldPosition;
+    const waterGeometry = new THREE.PlaneGeometry(width, depthCoverage);
 
-    void main() {
-        vUv = uv;
+    water = new Water(waterGeometry, {
+        textureWidth: 512,
+        textureHeight: 512,
+    
+        waterNormals: new THREE.TextureLoader().load(
+            '../assets/textures/NormalMapping/waternormals.jpg',
+            function (texture) {
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            }
+        ),
+        sunDirection: new THREE.Vector3(0, 1, 0),
+        sunColor: 0xffffff,
+        waterColor: 0x001e0f,
+        distortionScale: 3.7,
+        fog: true // integra automaticamente com o THREE.Fog da cena
+    });
 
-        vec3 pos = position;
-
-        // ondas simples somando dois senos em direções/frequências
-        // diferentes (evita um padrão repetitivo óbvio)
-        float wave =
-            sin(pos.x * 0.15 + uTime * 1.2) * 0.15 +
-            sin(pos.z * 0.25 + uTime * 0.8) * 0.10;
-
-        pos.y += wave;
-        vWave = wave;
-
-        vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
-        vWorldPosition = worldPosition.xyz;
-
-        gl_Position = projectionMatrix * viewMatrix * worldPosition;
-    }
-`;
-
-const waterFragmentShader = `
-    uniform vec3 uWaterColor;
-    uniform vec3 uWaterColorDeep;
-    uniform vec3 fogColor;
-    uniform float fogNear;
-    uniform float fogFar;
-
-    varying vec2 vUv;
-    varying float vWave;
-    varying vec3 vWorldPosition;
-
-    void main() {
-        // cor mais clara nas cristas da onda, mais escura nos vales
-        float waveFactor = smoothstep(-0.15, 0.15, vWave);
-        vec3 color = mix(uWaterColorDeep, uWaterColor, waveFactor);
-
-        // "espuma" simples nas cristas mais altas
-        float foam = smoothstep(0.12, 0.16, vWave);
-        color = mix(color, vec3(1.0), foam * 0.5);
-
-        // integra com o fog da cena manualmente (ShaderMaterial não
-        // herda o THREE.Fog automaticamente)
-        float depthFromCamera = length(cameraPosition - vWorldPosition);
-        float fogFactor = smoothstep(fogNear, fogFar, depthFromCamera);
-        color = mix(color, fogColor, fogFactor);
-
-        gl_FragColor = vec4(color, 0.85);
-    }
-`;
-
-const waterMaterial = new THREE.ShaderMaterial({
-    uniforms: waterUniforms,
-    vertexShader: waterVertexShader,
-    fragmentShader: waterFragmentShader,
-    transparent: true
-});
-
-function createWater(width, depth, chunkCenterZ) {
-
-    const geometry = new THREE.PlaneGeometry(width, depth, 40, 40);
-    geometry.rotateX(-Math.PI / 2);
-
-    const water = new THREE.Mesh(geometry, waterMaterial);
-    water.position.set(0, WATER_LEVEL, chunkCenterZ);
-
-    water.userData.isWater = true;
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = WATER_LEVEL;
 
     return water;
 }
 
-function updateWaterTime(delta) {
-    waterUniforms.uTime.value += delta;
-}
+function updateWater(delta, aviaoPosition, light) {
+    if (!water) return;
 
-function syncWaterFog(scene) {
-    if (scene.fog) {
-        waterUniforms.fogColor.value.copy(scene.fog.color);
-        waterUniforms.fogNear.value = scene.fog.near;
-        waterUniforms.fogFar.value = scene.fog.far;
+    water.material.uniforms['time'].value += delta;
+
+    // acompanha o avião em Z para sempre cobrir a área visível do
+    // terreno gerado infinitamente
+    water.position.z = aviaoPosition.z;
+
+    // alinha o brilho especular do sol da água com a luz direcional
+    // da cena, para ficar coerente com a iluminação do resto do jogo
+    if (light) {
+        water.material.uniforms['sunDirection'].value
+            .copy(light.position)
+            .normalize();
     }
 }
 
-export { createWater, updateWaterTime, syncWaterFog };
+export { createWater, updateWater };

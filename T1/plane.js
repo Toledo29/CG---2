@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { generateTreesForChunk } from './trees.js';
 import { createTerrain, getTerrainHeight, WATER_LEVEL } from './terrain.js';
-import { createWater } from './water.js';
 
     function makeCreateChunk(deps) {
         const {
@@ -33,9 +32,6 @@ import { createWater } from './water.js';
         terrain.position.z = chunkCenterZ;
 
         chunkGroup.add(terrain);
-
-        const water = createWater(planeWidth, planeDepth, chunkCenterZ);
-        chunkGroup.add(water);
 
         const treePositions = [];
         let attempts = 0;

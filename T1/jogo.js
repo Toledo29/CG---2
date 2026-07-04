@@ -1,14 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import Stats from '../build/jsm/libs/stats.module.js';
-import {
-  initRenderer,
-  setDefaultMaterial,
-  InfoBox,
-  onWindowResize,
-  createGroundPlaneWired
-} from "../libs/util/util.js";
-
+import { initRenderer, setDefaultMaterial, InfoBox, onWindowResize, createGroundPlaneWired } from "../libs/util/util.js";
 import { aviao, helice } from './aviao.js';
 import { initPlayerShooting, updatePlayerShooting, updatePlayerBullets, updateEnemyBullets } from './bullets.js';
 import { loadEnemyModel, updateEnemies } from './enemies.js';
@@ -21,7 +14,7 @@ import { createLights, updateDirectionalShadow } from './light.js';
 import { loadingManager } from './loadingManager.js';
 import { initPlayerState, isGameOver, healEnergy } from './playerState.js';
 import { initHealthPacks, updateHealthPacks } from './healthpacks.js';
-import { updateWaterTime, syncWaterFog } from './water.js';
+import { createWater, updateWater } from './water.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
 scene = new THREE.Scene();    // Cria cena
@@ -51,7 +44,6 @@ let fogDistance = 100;
 scene.background = new THREE.Color(fogColor);
 scene.fog = new THREE.Fog(fogColor, fogDistance, 500);
 light = createLights(scene, fogDistance);
-syncWaterFog(scene);
 
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
 
@@ -79,6 +71,9 @@ const chunksAhead = 4;
 const chunksBehind = 1;
 const playerBoundingBox = new THREE.Box3();
 
+const water = createWater(planeWidth, planeDepth * (chunksAhead + chunksBehind + 4));
+scene.add(water);
+
 const createChunk = makeCreateChunk({
   planeWidth,
   planeDepth,
@@ -102,12 +97,10 @@ if (fogSlider) {
     const newSide = updateDirectionalShadow(light, fogDistance);
     if (light) light.userData.shadowSide = newSide;
     fogValue.textContent = fogDistance;
-    syncWaterFog(scene);
   });
 }
 
 updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
-
 
 initPlayerState();
 initHealthPacks(scene, healEnergy);
@@ -154,8 +147,10 @@ function render() {
 
   const delta = Math.min(clock.getDelta() * 0.6, 0.05);
 
+  // NOVO: quando o jogo termina, para de atualizar a lógica (mas continua
+  // renderizando o último frame, já que a tela de game over fica por cima)
   if (isGameOver()) {
-      updateWaterTime(delta);
+      updateWater(delta, aviao.position, light);
       renderer.render(scene, camera);
       return;
   }
@@ -194,6 +189,8 @@ function render() {
     light.updateMatrixWorld();
     light.target.updateMatrixWorld();
   }
-  updateWaterTime(delta);
+
+  updateWater(delta, aviao.position, light);
+
   renderer.render(scene, camera);
 }
