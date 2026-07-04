@@ -1,11 +1,10 @@
 import * as THREE from 'three';
 
 import { GLTFLoader } from '../build/jsm/loaders/GLTFLoader.js';
-
-// CORRETO
 import * as SkeletonUtils from '../build/jsm/utils/SkeletonUtils.js';
 
 import { createEnemyBullet } from './bullets.js';
+import { loadingManager } from './loadingManager.js'; // NOVO
 
 export const enemies = [];
 const spawnedEnemyChunks = new Set();
@@ -26,7 +25,9 @@ export function setEnemySpawnPairs(v) {
     ENEMY_SPAWN_PAIRS = v;
 }
 
-const loader = new GLTFLoader();
+// CORRIGIDO: loader agora usa o loadingManager compartilhado, para que a
+// tela de carregamento acompanhe também o progresso do modelo GLB
+const loader = new GLTFLoader(loadingManager);
 
 export async function loadEnemyModel(scene) {
 
@@ -100,13 +101,7 @@ function spawnEnemy(
     });
 
     const x = side * 260;
-
-    // CORRIGIDO: voltei a calcular o Z em cima do chunk (mecanismo que já
-    // funcionava, sem risco de "clustering"), só que com um deslocamento
-    // maior dentro do chunk (1.5x em vez de 0.75x) para garantir que o
-    // inimigo nasça mais longe do avião.
     const z = chunkIndex * planeDepth + planeDepth * 1.5 + THREE.MathUtils.randFloat(-20, 20);
-
     const y = player.position.y;
 
     enemyMesh.position.set(x, y, z);
@@ -158,7 +153,6 @@ export function updateEnemies(delta, player) {
     }
 }
 
-// convenience: spawn enemies directly in front of player by mapping Z to a chunk
 export function spawnEnemiesInFront(player, planeDepth, distanceAhead = planeDepth) {
     if (!enemyModel) return;
     const targetZ = player.position.z + distanceAhead;
@@ -166,30 +160,21 @@ export function spawnEnemiesInFront(player, planeDepth, distanceAhead = planeDep
     spawnEnemiesForChunk(chunkIndex, planeDepth, player);
 }
 
-
-
 function updateDeath(enemy, delta, index) {
 
     enemy.deathTimer += delta;
-
     enemy.mesh.scale.multiplyScalar(0.96);
-
     enemy.mesh.rotation.z += 0.15;
-
     enemy.mesh.position.y -= 12 * delta;
 
     enemy.mesh.traverse((obj) => {
-
         if (obj.material) {
-
             obj.material.transparent = true;
-
             obj.material.opacity -= 0.03;
         }
     });
 
     if (enemy.deathTimer >= 1.5) {
-
         removeEnemy(index);
     }
 }
@@ -201,22 +186,13 @@ function removeEnemy(index) {
     sceneRef.remove(enemy.mesh);
 
     enemy.mesh.traverse((obj) => {
-
         if (obj.geometry) {
-
             obj.geometry.dispose();
         }
-
         if (obj.material) {
-
             if (Array.isArray(obj.material)) {
-
-                obj.material.forEach(
-                    m => m.dispose()
-                );
-
+                obj.material.forEach(m => m.dispose());
             } else {
-
                 obj.material.dispose();
             }
         }

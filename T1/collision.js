@@ -1,18 +1,17 @@
 import { playerBullets, enemyBullets } from './bullets.js';
-
 import { enemies } from './enemies.js';
-
-let damageCounter = 0;
-
-const damageHUD = document.getElementById('damageHUD');
+import { takeDamage, isInvincible, isGameOver } from './playerState.js';
+import { notifyEnemyKilled } from './healthpacks.js';
 
 export function updateCollisions(aviao, playerBoundingBox) {
+
+    if (isGameOver()) return;
 
     playerBoundingBox.setFromObject(aviao);
 
     playerVsEnemyBullets(playerBoundingBox);
 
-    playerBulletsVsEnemies();
+    playerBulletsVsEnemies(aviao);
 }
 
 function playerVsEnemyBullets(playerBoundingBox) {
@@ -25,22 +24,23 @@ function playerVsEnemyBullets(playerBoundingBox) {
             bullet.boundingBox.intersectsBox(playerBoundingBox)
         ) {
 
-            damageCounter++;
-
-            damageHUD.innerText =
-                `Tiros Sofridos: ${damageCounter}`;
+            // CORRIGIDO: só aplica dano se o modo invencível não estiver ativo
+            if (!isInvincible()) {
+                takeDamage();
+            }
 
             bullet.mesh.parent.remove(bullet.mesh);
 
-            bullet.mesh.geometry.dispose();
-            bullet.mesh.material.dispose();
+            // CORRIGIDO: geometria/material do tiro agora são compartilhados
+            // entre todos os tiros (ver bullets.js) — NÃO fazer dispose()
+            // aqui, senão todos os próximos tiros ficam quebrados.
 
             enemyBullets.splice(i, 1);
         }
     }
 }
 
-function playerBulletsVsEnemies() {
+function playerBulletsVsEnemies(player) {
 
     for (
         let i = playerBullets.length - 1;
@@ -58,33 +58,30 @@ function playerBulletsVsEnemies() {
 
             const enemy = enemies[j];
 
-            // ignora mortos
             if (enemy.isDead) continue;
 
-            // atualiza bounding box
             enemy.boundingBox.setFromObject(
                 enemy.mesh
             );
 
-            // colisão
             if (
-
                 bullet.boundingBox.intersectsBox(
                     enemy.boundingBox
                 )
             ) {
 
-                // mata só esse inimigo
                 enemy.isDead = true;
 
-                // remove tiro
+                // NOVO: avisa o sistema de health packs — a cada 3 abates
+                // nasce um pack de energia perto do player
+                notifyEnemyKilled(player);
+
                 bullet.mesh.parent.remove(
                     bullet.mesh
                 );
 
-                bullet.mesh.geometry.dispose();
-
-                bullet.mesh.material.dispose();
+                // CORRIGIDO: mesmo motivo do bloco acima — não fazer
+                // dispose() em geometria/material compartilhados.
 
                 playerBullets.splice(i, 1);
 

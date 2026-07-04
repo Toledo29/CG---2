@@ -22,12 +22,10 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
   camera.up.set(0.0, 1.0, 0.0);
   camera.lookAt(0.0, 11, 0.0);
 
-  // alvo invisivel para camera (x/y fixos e z seguindo o aviao)
   const cameraTarget = new THREE.Object3D();
   cameraTarget.position.set(0, 11.5, aviao.position.z);
   scene.add(cameraTarget);
 
-  // mouse mapping helpers
   const mouseNDC = new THREE.Vector2(0, 0);
   const raycaster = new THREE.Raycaster();
   const zPlaneNormal = new THREE.Vector3(0, 0, 1);
@@ -75,39 +73,6 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
 
   window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
 
-  window.addEventListener('keydown', (event) => {
-
-     // velocidade lenta
-    if (event.key === '1') {
-      currentSpeed = 0.08;
-      speedMultiplier = 0.6;
-      setEnemySpeedMultiplier(0.6);
-      setEnemySpawnPairs(1);   // <- 1 par (2 inimigos) por chunk
-      setBulletSpeed(120);
-      setPlayerShootInterval(0.18);
-    }
-
-    // velocidade normal
-    if (event.key === '2') {
-      currentSpeed = 0.45;
-      speedMultiplier = 1;
-      setEnemySpeedMultiplier(1);
-      setEnemySpawnPairs(1);   // <- 1 par (2 inimigos) por chunk
-      setBulletSpeed(180);
-      setPlayerShootInterval(0.12);
-    }
-
-    // velocidade rápida
-    if (event.key === '3') {
-      currentSpeed = 1.4;
-      speedMultiplier = 1.8;
-      setEnemySpeedMultiplier(5);
-      setEnemySpawnPairs(2);   // <- 2 pares (4 inimigos) por chunk
-      setBulletSpeed(320);
-      setPlayerShootInterval(0.08);
-    }
-  });
-
   const settings = Object.assign({
     maxRollDeg: 45,
     maxPitchDeg: 20,
@@ -127,18 +92,69 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
   // multiplicador geral de velocidade
   let speedMultiplier = 1;
 
+  // NOVO: referências aos botões de velocidade na tela
+  const speedButtons = document.querySelectorAll('.speedButton');
+
+  // NOVO: função única que aplica um modo de velocidade (1, 2 ou 3),
+  // usada tanto pela tecla quanto pelo clique no botão, garantindo que os
+  // dois fiquem sempre sincronizados.
+  function setSpeedMode(mode) {
+
+    if (mode === 1) {
+      currentSpeed = 0.08;
+      speedMultiplier = 0.6;
+      setEnemySpeedMultiplier(0.6);
+      setEnemySpawnPairs(1);
+      setBulletSpeed(120);
+      setPlayerShootInterval(0.18);
+    }
+
+    if (mode === 2) {
+      currentSpeed = 0.45;
+      speedMultiplier = 1;
+      setEnemySpeedMultiplier(1);
+      setEnemySpawnPairs(1);
+      setBulletSpeed(180);
+      setPlayerShootInterval(0.12);
+    }
+
+    if (mode === 3) {
+      currentSpeed = 1.4;
+      speedMultiplier = 1.8;
+      setEnemySpeedMultiplier(5);
+      setEnemySpawnPairs(2);
+      setBulletSpeed(320);
+      setPlayerShootInterval(0.08);
+    }
+
+    // NOVO: destaca visualmente o botão do modo ativo
+    speedButtons.forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.speed === String(mode));
+    });
+  }
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === '1') setSpeedMode(1);
+    if (event.key === '2') setSpeedMode(2);
+    if (event.key === '3') setSpeedMode(3);
+  });
+
+  // NOVO: clique no botão dispara o mesmo efeito da tecla
+  speedButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setSpeedMode(parseInt(btn.dataset.speed, 10));
+    });
+  });
+
+  // NOVO: começa já no modo 2 (normal), deixando tecla/botão/comportamento
+  // consistentes desde o início do jogo
+  setSpeedMode(2);
+
   function update(delta) {
     const maxRollZ = THREE.MathUtils.degToRad(settings.maxRollDeg);
 
-    // CORRIGIDO: antes o avanço em Z era por FRAME (não por tempo real),
-    // então em máquinas com FPS alto o avião "teleportava" vários chunks
-    // de uma vez no modo 3, fazendo chunks/inimigos nascerem já atrás da
-    // câmera (nunca chegavam a ser vistos). Agora o avanço é escalado por
-    // delta (multiplicado por 60 para manter a mesma sensação de
-    // velocidade que já existia a ~60fps).
     aviao.position.z += currentSpeed * speedMultiplier * 60 * delta;
 
-    // camera target follows aviao
     cameraTarget.position.z = aviao.position.z;
     cameraTarget.position.x = aviao.position.x - (aviao.position.x * settings.cameraXOffset);
 
@@ -155,14 +171,11 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
 
     targetMarker.position.set(targetX, targetY, aviao.position.z - 1);
 
-    // NOVO: informa ao módulo de tiros para onde o player está mirando,
-    // para que os tiros saiam na direção do target (ver bullets.js).
     setPlayerAimPoint(targetX, targetY);
 
     aviao.position.x = lerpAtConstantSpeed(aviao.position.x, targetX, settings.lateralSpeed * delta);
     aviao.position.y = lerpAtConstantSpeed(aviao.position.y, targetY, settings.verticalSpeed * delta);
 
-    // inclina ate 45 graus com movimento lateral e estabiliza ao cessar movimento
     const lateralDelta = targetX - aviao.position.x;
     const desiredRollZ = THREE.MathUtils.clamp(
       -(lateralDelta / settings.lateralResponse) * maxRollZ,
@@ -171,7 +184,6 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     );
     aviao.rotation.z = THREE.MathUtils.lerp(aviao.rotation.z, desiredRollZ, 0.12);
 
-    // pitch (rotation X) based on vertical movement: nose up when ascending
     const maxPitchX = THREE.MathUtils.degToRad(settings.maxPitchDeg);
     const verticalDelta = targetY - aviao.position.y;
     const desiredPitchX = THREE.MathUtils.clamp(

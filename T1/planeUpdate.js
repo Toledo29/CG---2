@@ -2,7 +2,11 @@ import * as THREE from 'three';
 import { spawnEnemiesForChunk } from './enemies.js';
 import { getTerrainHeight } from './terrain.js';
 
-// Função para obter a posição no mundo a partir das coordenadas NDC do mouse, projetando um plano no eixo Z
+const _matrix = new THREE.Matrix4();
+const _quat = new THREE.Quaternion();
+const _scaleVec = new THREE.Vector3();
+const _posVec = new THREE.Vector3();
+
 function getWorldPointAtZPlane(ndcX, ndcY, zValue, camera, mousePlane, raycaster, zPlaneNormal, intersectionPoint) {
     mousePlane.setFromNormalAndCoplanarPoint(zPlaneNormal, new THREE.Vector3(0, 0, zValue));
     raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
@@ -15,7 +19,6 @@ function getWorldPointAtZPlane(ndcX, ndcY, zValue, camera, mousePlane, raycaster
     return intersectionPoint.clone();
 }
 
-// Calcula os limites do plano visível no plano Z para limitar o movimento do avião dentro da tela
 function getScreenBoundsAtZPlane(zPlane, camera, mousePlane, raycaster, zPlaneNormal, intersectionPoint) {
     const corners = [
         getWorldPointAtZPlane(-1, -1, zPlane, camera, mousePlane, raycaster, zPlaneNormal, intersectionPoint),
@@ -47,14 +50,12 @@ function removeChunk(chunkIndex, chunks, scene) {
     chunks.delete(chunkIndex);
 }
 
-// CORRIGIDO: antes só movia a posição Z do terreno/árvores e mantinha a altura (Y)
-// antiga, causando descontinuidade (degraus/buracos) entre chunks reciclados.
-// Agora a altura de cada vértice do terreno e de cada árvore é recalculada
-// para a nova posição Z, usando a mesma função de ruído (getTerrainHeight).
+// CORRIGIDO: recalcula a altura do terreno igual antes, mas agora as árvores
+// são InstancedMesh (ver trees.js), então em vez de mover cada "child.position"
+// individual, recalculamos a matriz de cada INSTÂNCIA usando os dados
+// (xs/zLocals/scales) salvos em userData na criação.
 function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
     const terrain = oldChunkGroup.children[0];
-    const oldZ = terrain.position.z;
-    const offset = chunkCenterZ - oldZ;
 
     // Move o plano
     terrain.position.z = chunkCenterZ;
@@ -73,12 +74,25 @@ function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
     terrain.geometry.computeBoundingSphere();
     terrain.geometry.computeBoundingBox();
 
-    // Move todas as árvores junto e recalcula a altura de cada uma
-    // (senão elas ficam "flutuando" ou "enterradas" no novo relevo)
+    // Recalcula a posição/altura de cada InstancedMesh de árvore
     for (let i = 1; i < oldChunkGroup.children.length; i++) {
-        const tree = oldChunkGroup.children[i];
-        tree.position.z += offset;
-        tree.position.y = getTerrainHeight(tree.position.x, tree.position.z) + 1.5;
+
+        const instancedMesh = oldChunkGroup.children[i];
+        const { xs, zLocals, scales, yOffsetFactor } = instancedMesh.userData;
+
+        for (let j = 0; j < xs.length; j++) {
+
+            const worldZ = zLocals[j] + chunkCenterZ;
+            const groundY = getTerrainHeight(xs[j], worldZ) + 1.5 + yOffsetFactor * scales[j];
+
+            _posVec.set(xs[j], groundY, worldZ);
+            _scaleVec.set(scales[j], scales[j], scales[j]);
+            _matrix.compose(_posVec, _quat, _scaleVec);
+            instancedMesh.setMatrixAt(j, _matrix);
+        }
+
+        instancedMesh.instanceMatrix.needsUpdate = true;
+        instancedMesh.computeBoundingSphere();
     }
 }
 
@@ -100,7 +114,6 @@ function updateChunks(
     const maxChunk =
         currentChunk + chunksAhead;
 
-    // cria chunks novos
     for (let i = minChunk; i <= maxChunk; i++) {
 
         if (!chunks.has(i)) {
@@ -108,15 +121,11 @@ function updateChunks(
             createChunk(i);
         }
 
-        // CORRIGIDO: janela de spawn de inimigos aumentada de +1 para +2 chunks,
-        // dando margem extra em velocidade alta (modo 3) para os inimigos
-        // serem criados antes de entrarem no campo de visão do jogador.
         if (i <= currentChunk + 2) {
             spawnEnemiesForChunk(i, planeDepth, aviao);
         }
     }
 
-    // recicla chunks antigos
     const chunksArray =
         Array.from(chunks.keys())
             .sort((a, b) => a - b);

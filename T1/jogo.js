@@ -18,22 +18,19 @@ import { makeCreateChunk } from './plane.js';
 import { getTerrainHeight } from './terrain.js';
 import { createCameraController } from './cameraController.js';
 import { createLights, updateDirectionalShadow } from './light.js';
+import { loadingManager } from './loadingManager.js';
+import { initPlayerState, isGameOver, healEnergy } from './playerState.js';
+import { initHealthPacks, updateHealthPacks } from './healthpacks.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
 scene = new THREE.Scene();    // Cria cena
 const clock = new THREE.Clock();
 
 renderer = new THREE.WebGLRenderer();
-// renderer = initRenderer();    // View function in util/utils
 
-// CORRIGIDO: em telas 4K/retina o devicePixelRatio pode passar de 2 ou 3,
-// fazendo o WebGL renderizar muito mais pixels do que o necessário (grande
-// impacto no FPS sem ganho visual perceptível). Limitamos a no máximo 2.
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 renderer.shadowMap.enabled = true;
-// CORRIGIDO: PCFShadowMap -> PCFSoftShadowMap para sombras com borda suave
-// (a propriedade shadow.radius só tem efeito com o soft shadow map).
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -46,44 +43,38 @@ const cameraController = createCameraController(scene, renderer, aviao);
 camera = cameraController.camera;
 initPlayerShooting(scene, camera, aviao);
 loadEnemyModel(scene).catch((error) => console.error(error));
+
 // Cria Fog
-const fogColor = 0x87ceeb; // cor da névoa (azul claro)
-let fogDistance = 100; // distância onde a névoa começa a ser aplicada
+const fogColor = 0x87ceeb;
+let fogDistance = 100;
 scene.background = new THREE.Color(fogColor);
 scene.fog = new THREE.Fog(fogColor, fogDistance, 500);
 light = createLights(scene, fogDistance);
 
-// Listen window size changes
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
 
-
-// Configuração de FPS
 const container = document.getElementById('container');
 const stats = new Stats();
 container.appendChild(stats.dom);
 
-// Cria constantes para plano do chão
 const planeWidth = 500;
 const planeDepth = 150;
 const halfPlaneWidth = planeWidth / 2;
 const halfPlaneDepth = planeDepth / 2;
 
-
 scene.add(aviao);
 
-// cameraTarget é gerenciada pelo controller
 const cameraTarget = cameraController.cameraTarget;
 
-// configura variáveis para controle de geração dos chunks
-const cameraFollowZOffset = -20; // distância da camera para o alvo
-const treeCountPerChunk = 400; // quantidade de árvores por chunk
-const minDistance = 4.5; // distância mínima entre as árvores para evitar sobreposição
-const margin = 2; // margem ao redor do chunk
+const cameraFollowZOffset = -20;
+const treeCountPerChunk = 400;
+const minDistance = 4.5;
+const margin = 2;
 const maxPlacementAttempts = 10000;
 
 const chunks = new Map();
-const chunksAhead = 4; // quantidade de chunks gerados à frente do avião
-const chunksBehind = 1; // quantidade de chunks mantidos atrás do avião 
+const chunksAhead = 4;
+const chunksBehind = 1;
 const playerBoundingBox = new THREE.Box3();
 
 const createChunk = makeCreateChunk({
@@ -100,8 +91,6 @@ const createChunk = makeCreateChunk({
   player: aviao
 });
 
-// Camera, mouse mapping and movement are handled by cameraController
-// Configuração do slider de controle da névoa
 const fogSlider = document.getElementById('fogSlider');
 const fogValue = document.getElementById('fogValue');
 if (fogSlider) {
@@ -114,26 +103,71 @@ if (fogSlider) {
   });
 }
 
-
-
 updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
 
-render();
+// NOVO: inicializa HUD de vida/invencibilidade e o sistema de health packs
+initPlayerState();
+initHealthPacks(scene, healEnergy);
+
+// NOVO: tela de carregamento — acompanha o progresso real dos assets
+// (texturas do avião + modelo GLB dos inimigos) através do loadingManager
+// compartilhado entre aviao.js e enemies.js.
+const loadingScreen = document.getElementById('loadingScreen');
+const loadingBarFill = document.getElementById('loadingBarFill');
+const loadingPercentText = document.getElementById('loadingPercentText');
+const startButton = document.getElementById('startButton');
+
+let gameStarted = false;
+
+loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+    const percent = Math.round((itemsLoaded / itemsTotal) * 100);
+    if (loadingBarFill) loadingBarFill.style.width = percent + '%';
+    if (loadingPercentText) loadingPercentText.innerText = `Carregando assets... ${percent}%`;
+};
+
+loadingManager.onLoad = function () {
+    if (loadingBarFill) loadingBarFill.style.width = '100%';
+    if (loadingPercentText) loadingPercentText.innerText = 'Carregando assets... 100%';
+    if (startButton) {
+        startButton.disabled = false;
+        startButton.style.cursor = 'pointer';
+        startButton.style.background = '#33cc55';
+        startButton.style.opacity = '1';
+    }
+};
+
+loadingManager.onError = function (url) {
+    console.error('Erro ao carregar asset:', url);
+};
+
+if (startButton) {
+    startButton.addEventListener('click', () => {
+        if (gameStarted) return;
+        gameStarted = true;
+        if (loadingScreen) loadingScreen.style.display = 'none';
+        render();
+    });
+}
+
 function render() {
   requestAnimationFrame(render);
 
-  // CORRIGIDO: limita o delta máximo (clamp) para evitar que um engasgo/lag
-  // spike (troca de aba, GC pesado etc) gere um "salto" grande de uma vez só
-  // — isso também ajudava a causar o bug de chunks/inimigos pulando posições.
   const delta = Math.min(clock.getDelta() * 0.6, 0.05);
 
-  // delegate movement and camera updates to controller
+  // NOVO: quando o jogo termina, para de atualizar a lógica (mas continua
+  // renderizando o último frame, já que a tela de game over fica por cima)
+  if (isGameOver()) {
+      renderer.render(scene, camera);
+      return;
+  }
+
   cameraController.update(delta);
   updatePlayerShooting(delta);
   updatePlayerBullets(delta);
   updateEnemyBullets(delta, aviao);
   updateEnemies(delta, aviao);
   updateCollisions(aviao, playerBoundingBox);
+  updateHealthPacks(delta, aviao); // NOVO
 
   const terrainHeight = getTerrainHeight(
     aviao.position.x,
@@ -149,7 +183,7 @@ function render() {
   helice.rotation.z += 0.1;
   stats.update();
   updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
-  // keep directional light moving with airplane on Z and aiming right-to-left
+
   if (light && light.target && light.userData && light.userData.shadowSide) {
     const side = light.userData.shadowSide;
     light.position.set(
@@ -161,5 +195,6 @@ function render() {
     light.updateMatrixWorld();
     light.target.updateMatrixWorld();
   }
-  renderer.render(scene, camera) // Render scene
+
+  renderer.render(scene, camera);
 }
