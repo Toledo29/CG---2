@@ -25,8 +25,6 @@ export function setEnemySpawnPairs(v) {
     ENEMY_SPAWN_PAIRS = v;
 }
 
-// CORRIGIDO: loader agora usa o loadingManager compartilhado, para que a
-// tela de carregamento acompanhe também o progresso do modelo GLB
 const loader = new GLTFLoader(loadingManager);
 
 export async function loadEnemyModel(scene) {

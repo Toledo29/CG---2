@@ -108,13 +108,10 @@ if (fogSlider) {
 
 updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
 
-// NOVO: inicializa HUD de vida/invencibilidade e o sistema de health packs
+
 initPlayerState();
 initHealthPacks(scene, healEnergy);
 
-// NOVO: tela de carregamento — acompanha o progresso real dos assets
-// (texturas do avião + modelo GLB dos inimigos) através do loadingManager
-// compartilhado entre aviao.js e enemies.js.
 const loadingScreen = document.getElementById('loadingScreen');
 const loadingBarFill = document.getElementById('loadingBarFill');
 const loadingPercentText = document.getElementById('loadingPercentText');
@@ -157,8 +154,6 @@ function render() {
 
   const delta = Math.min(clock.getDelta() * 0.6, 0.05);
 
-  // NOVO: quando o jogo termina, para de atualizar a lógica (mas continua
-  // renderizando o último frame, já que a tela de game over fica por cima)
   if (isGameOver()) {
       updateWaterTime(delta);
       renderer.render(scene, camera);

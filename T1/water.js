@@ -1,16 +1,6 @@
 import * as THREE from 'three';
 import { WATER_LEVEL } from './terrain.js';
 
-// ---------------------------------------------------------------------
-// NOVO (T3 - Ambiente): água nas regiões baixas do terreno, via shader.
-// ---------------------------------------------------------------------
-// Estratégia: um plano do tamanho do chunk é posicionado numa altura fixa
-// (WATER_LEVEL). Como o terreno tem picos que ficam BEM acima dessa
-// altura, o depth test do WebGL já resolve tudo sozinho: onde o terreno
-// está mais alto que a água, ele fica na frente da câmera e esconde a
-// água; onde o terreno é mais baixo que WATER_LEVEL (vales/planícies),
-// a água aparece por cima, formando lagos/mares de forma automática.
-
 const waterUniforms = {
     uTime: { value: 0 },
     uWaterColor: { value: new THREE.Color(0x2e86ab) },
@@ -78,8 +68,6 @@ const waterFragmentShader = `
     }
 `;
 
-// material único, compartilhado por TODOS os planos de água (assim
-// todos os chunks animam as ondas em sincronia com um só update de tempo)
 const waterMaterial = new THREE.ShaderMaterial({
     uniforms: waterUniforms,
     vertexShader: waterVertexShader,
@@ -95,8 +83,6 @@ function createWater(width, depth, chunkCenterZ) {
     const water = new THREE.Mesh(geometry, waterMaterial);
     water.position.set(0, WATER_LEVEL, chunkCenterZ);
 
-    // flag usada pelo planeUpdate.js para tratar esse mesh de forma
-    // diferente das InstancedMesh de árvores durante a reciclagem de chunk
     water.userData.isWater = true;
 
     return water;
@@ -106,8 +92,6 @@ function updateWaterTime(delta) {
     waterUniforms.uTime.value += delta;
 }
 
-// mantém a água com a mesma cor/distância de fog configurada na cena
-// (chame de novo sempre que o fog mudar, ex: no slider de fogDistance)
 function syncWaterFog(scene) {
     if (scene.fog) {
         waterUniforms.fogColor.value.copy(scene.fog.color);

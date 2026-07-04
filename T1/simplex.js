@@ -1,8 +1,3 @@
-/*
- * Simplex Noise JS
- * baseado em Stefan Gustavson
- */
-
 export class SimplexNoise {
 
     constructor(r = Math) {

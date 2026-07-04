@@ -4,59 +4,31 @@ import { loadingManager } from './loadingManager.js';
 
 const noise = new SimplexNoise();
 
-// Nível de referência da água (usado também pelo water.js e pelo shader
-// do terreno para decidir onde entra areia)
 export const WATER_LEVEL = -10;
 
 function getTerrainHeight(x, z) {
 
-    // ruído de larga escala que define REGIÕES do mapa — algumas ficam
-    // baixas/planas (áreas de água), outras viram cadeias de montanha
-    const region = noise.noise2D(x * 0.0015, z * 0.0015); // varia de -1 a 1
+    const region = noise.noise2D(x * 0.0015, z * 0.0015); 
 
-    // fator 0..1: perto de 0 em regiões baixas (vira planície/vale),
-    // perto de 1 em regiões altas (vira montanha)
     const mountainFactor = THREE.MathUtils.clamp((region + 0.3) * 1.1, 0, 1);
 
-    // ruído principal das montanhas
     let mountains = noise.noise2D(x * 0.004, z * 0.004);
 
-    // eleva o ruído a uma potência preservando o sinal — picos mais
-    // acentuados e vales mais suaves/achatados
     mountains = Math.sign(mountains) * Math.pow(Math.abs(mountains), 1.6);
 
-    // altura das montanhas (0 nas regiões baixas, até ~24 nas regiões altas)
     const large = mountains * 24 * mountainFactor;
 
     const medium = noise.noise2D(x * 0.015, z * 0.015) * 2.5;
     const small = noise.noise2D(x * 0.05, z * 0.05) * 0.5;
 
-    // desloca a base do terreno pra baixo, garantindo que as regiões de
-    // baixo mountainFactor (planícies) fiquem abaixo de WATER_LEVEL,
-    // criando bacias/vales reais para a água
     const base = -6;
 
     return base + large + medium + small;
 }
 
-// ---------------------------------------------------------------------
-// NOVO (T3 - Ambiente): material do terreno com blending de texturas
-// ---------------------------------------------------------------------
-// Em vez de aplicar UMA textura só, usamos um MeshStandardMaterial e
-// injetamos, via onBeforeCompile, a lógica de mistura de 4 texturas
-// (areia / grama / rocha / neve) direto no shader que o próprio Three.js
-// gera. Isso é ótimo porque a gente ganha de graça tudo que o
-// MeshStandardMaterial já resolve (luz, sombra recebida, fog) e só
-// modifica o trecho que decide a cor final de cada pixel do terreno,
-// misturando as texturas com base na ALTURA (y) e na INCLINAÇÃO (normal)
-// de cada ponto da superfície.
 
 const textureLoader = new THREE.TextureLoader(loadingManager);
 
-// IMPORTANTE: baixe 4 texturas seamless/tileable gratuitas (CC0) em
-// ambientcg.com ou polyhaven.com (busque por "Grass", "Rock"/"Cliff",
-// "Sand"/"Beach", "Snow") e salve dentro de T3/assets/textures/ com
-// esses nomes (ou ajuste os caminhos abaixo).
 function loadTerrainTexture(path, repeat) {
     const texture = textureLoader.load(path);
     texture.wrapS = THREE.RepeatWrapping;
@@ -86,7 +58,6 @@ function createTerrainMaterial() {
         shader.uniforms.snowTexture = { value: snowTexture };
         shader.uniforms.uWaterLevel = { value: WATER_LEVEL };
 
-        // --- vertex shader: exporta posição local (altura) e normal ---
         shader.vertexShader = shader.vertexShader.replace(
             '#include <common>',
             `
@@ -105,7 +76,6 @@ function createTerrainMaterial() {
             `
         );
 
-        // --- fragment shader: mistura as 4 texturas ---
         shader.fragmentShader = shader.fragmentShader.replace(
             '#include <common>',
             `
@@ -156,8 +126,6 @@ function createTerrainMaterial() {
     return material;
 }
 
-// material único, compartilhado por TODOS os chunks de terreno (evita
-// recompilar/duplicar o shader a cada chunk criado)
 const terrainMaterial = createTerrainMaterial();
 
 function createTerrain(

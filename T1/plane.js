@@ -3,8 +3,6 @@ import { generateTreesForChunk } from './trees.js';
 import { createTerrain, getTerrainHeight, WATER_LEVEL } from './terrain.js';
 import { createWater } from './water.js';
 
-
-// Factory that returns a createChunk function bound to provided dependencies
     function makeCreateChunk(deps) {
         const {
             planeWidth,
@@ -36,10 +34,6 @@ import { createWater } from './water.js';
 
         chunkGroup.add(terrain);
 
-        // NOVO (T3 - Ambiente): água nas regiões baixas do chunk.
-        // Precisa ser o children[1] do grupo (logo depois do terreno) —
-        // ver planeUpdate.js, que trata esse filho de forma especial
-        // durante a reciclagem, através de water.userData.isWater.
         const water = createWater(planeWidth, planeDepth, chunkCenterZ);
         chunkGroup.add(water);
 
@@ -63,10 +57,6 @@ import { createWater } from './water.js';
 
                 const y = getTerrainHeight(x, worldZ);
 
-                // NOVO: não planta árvore em cima de água — só aceita a
-                // posição se o terreno ali estiver acima do nível da água
-                // (com uma margem de segurança de 0.5 pra evitar árvores
-                // "na beira" que ficam parcialmente afundadas)
                 if (y > WATER_LEVEL + 0.5) {
                     treePositions.push(
                         new THREE.Vector3(x, y, zLocal)
@@ -76,7 +66,6 @@ import { createWater } from './water.js';
             attempts++;
         }
 
-        // after positions are generated, create tree meshes and add to chunk
         generateTreesForChunk(treePositions, chunkGroup, chunkCenterZ);
 
         scene.add(chunkGroup);

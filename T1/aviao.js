@@ -1,15 +1,10 @@
 import * as THREE from 'three';
 import { loadingManager } from './loadingManager.js';
 
-// NOVO: TextureLoader ligado ao loadingManager compartilhado, para que a
-// tela de carregamento consiga acompanhar o progresso real do download
-// das texturas do avião.
+// tela de carregamento 
 const textureLoader = new THREE.TextureLoader(loadingManager);
 
-// NOVO: as 3 texturas do avião exigidas pelo T3.
-// Troque os nomes abaixo pelos arquivos que vocês baixaram (mantendo-os
-// dentro de "assets/textures/" no projeto — lembrem-se que Linux é
-// case sensitive!).
+// texturas do avião exigidas pelo T3.
 const metalTexture = textureLoader.load('./assets/aviao_metal.jpg');
 const paintedMetalTexture = textureLoader.load('./assets/aviao_pintura.jpg');
 const metal2FiberTexture = textureLoader.load('./assets/aviao_metal2.jpg');

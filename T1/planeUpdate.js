@@ -75,15 +75,11 @@ function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
 
         const child = oldChunkGroup.children[i];
 
-        // NOVO (T3 - Ambiente): a água é um Mesh comum (não InstancedMesh)
-        // que cobre o chunk inteiro numa altura fixa (WATER_LEVEL) — só
-        // precisa acompanhar a nova posição em Z, sem recalcular vértices.
         if (child.userData && child.userData.isWater) {
             child.position.z = chunkCenterZ;
             continue;
         }
 
-        // resto do código original: InstancedMesh de árvores
         const instancedMesh = child;
         const { xs, zLocals, scales, yOffsetFactor } = instancedMesh.userData;
 
@@ -92,9 +88,6 @@ function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
             const worldZ = zLocals[j] + chunkCenterZ;
             const groundHeight = getTerrainHeight(xs[j], worldZ);
 
-            // NOVO: se a nova posição do chunk colocou essa árvore em
-            // cima de água, "esconde" a instância zerando sua escala,
-            // em vez de deixá-la boiando/afundada na água
             const isUnderwater = groundHeight < WATER_LEVEL + 0.5;
 
             if (isUnderwater) {
