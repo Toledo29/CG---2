@@ -21,6 +21,7 @@ import { createLights, updateDirectionalShadow } from './light.js';
 import { loadingManager } from './loadingManager.js';
 import { initPlayerState, isGameOver, healEnergy } from './playerState.js';
 import { initHealthPacks, updateHealthPacks } from './healthpacks.js';
+import { updateWaterTime, syncWaterFog } from './water.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
 scene = new THREE.Scene();    // Cria cena
@@ -50,6 +51,7 @@ let fogDistance = 100;
 scene.background = new THREE.Color(fogColor);
 scene.fog = new THREE.Fog(fogColor, fogDistance, 500);
 light = createLights(scene, fogDistance);
+syncWaterFog(scene);
 
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
 
@@ -100,6 +102,7 @@ if (fogSlider) {
     const newSide = updateDirectionalShadow(light, fogDistance);
     if (light) light.userData.shadowSide = newSide;
     fogValue.textContent = fogDistance;
+    syncWaterFog(scene);
   });
 }
 
@@ -157,6 +160,7 @@ function render() {
   // NOVO: quando o jogo termina, para de atualizar a lógica (mas continua
   // renderizando o último frame, já que a tela de game over fica por cima)
   if (isGameOver()) {
+      updateWaterTime(delta);
       renderer.render(scene, camera);
       return;
   }
@@ -195,6 +199,6 @@ function render() {
     light.updateMatrixWorld();
     light.target.updateMatrixWorld();
   }
-
+  updateWaterTime(delta);
   renderer.render(scene, camera);
 }

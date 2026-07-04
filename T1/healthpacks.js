@@ -77,7 +77,7 @@ function spawnHealthPack(player) {
     const x = THREE.MathUtils.randFloat(-40, 40);
     const z = player.position.z + THREE.MathUtils.randFloat(80, 160);
     const terrainY = getTerrainHeight(x, z);
-    const y = terrainY + THREE.MathUtils.randFloat(6, 14);
+    const y = terrainY + THREE.MathUtils.randFloat(9, 20);
 
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
