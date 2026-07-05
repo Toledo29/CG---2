@@ -92,12 +92,9 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
   // multiplicador geral de velocidade
   let speedMultiplier = 1;
 
-  // NOVO: referências aos botões de velocidade na tela
+  
   const speedButtons = document.querySelectorAll('.speedButton');
 
-  // NOVO: função única que aplica um modo de velocidade (1, 2 ou 3),
-  // usada tanto pela tecla quanto pelo clique no botão, garantindo que os
-  // dois fiquem sempre sincronizados.
   function setSpeedMode(mode) {
 
     if (mode === 1) {
@@ -146,7 +143,6 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
     });
   });
 
-  // NOVO: começa já no modo 2 (normal), deixando tecla/botão/comportamento
   // consistentes desde o início do jogo
   setSpeedMode(2);
 

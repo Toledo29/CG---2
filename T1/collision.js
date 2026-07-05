@@ -24,16 +24,11 @@ function playerVsEnemyBullets(playerBoundingBox, playerSound) {
             bullet.boundingBox.intersectsBox(playerBoundingBox)
         ) {
 
-            // CORRIGIDO: só aplica dano se o modo invencível não estiver ativo
             if (!isInvincible()) {
                 takeDamage();
             }
 
             bullet.mesh.parent.remove(bullet.mesh);
-
-            // CORRIGIDO: geometria/material do tiro agora são compartilhados
-            // entre todos os tiros (ver bullets.js) — NÃO fazer dispose()
-            // aqui, senão todos os próximos tiros ficam quebrados.
 
             enemyBullets.splice(i, 1);
             if (playerSound) {
@@ -78,16 +73,12 @@ function playerBulletsVsEnemies(player, enemySound) {
 
                 enemy.isDead = true;
 
-                // NOVO: avisa o sistema de health packs — a cada 3 abates
                 // nasce um pack de energia perto do player
                 notifyEnemyKilled(player);
 
                 bullet.mesh.parent.remove(
                     bullet.mesh
                 );
-
-                // CORRIGIDO: mesmo motivo do bloco acima — não fazer
-                // dispose() em geometria/material compartilhados.
 
                 playerBullets.splice(i, 1);
                 

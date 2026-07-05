@@ -9,17 +9,11 @@ let onCollectCallback = null;
 let killsSinceLastPack = 0;
 const KILLS_PER_PACK = 3;      // a cada 3 inimigos abatidos, nasce 1 pack
 
-// NOTA (pedido do enunciado): a distância mínima de coleta foi testada e
-// ajustada visualmente em 4 unidades — próxima o suficiente para não
-// parecer "roubado", mas com folga suficiente já que o pack também é
-// puxado (efeito atrator) até o avião a partir de 25 unidades.
 const ATTRACT_RADIUS = 25;
 const ATTRACT_SPEED = 60;
 const COLLECT_RADIUS = 4;
 const ENERGY_RESTORE_PERCENT = 25;
 
-// gera uma textura simples (cruz de energia) via canvas, sem depender de
-// nenhum arquivo de imagem externo
 function createHealthPackTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 128;
@@ -77,7 +71,7 @@ function spawnHealthPack(player) {
     const x = THREE.MathUtils.randFloat(-40, 40);
     const z = player.position.z + THREE.MathUtils.randFloat(80, 160);
     const terrainY = getTerrainHeight(x, z);
-    const y = terrainY + THREE.MathUtils.randFloat(6, 14);
+    const y = terrainY + THREE.MathUtils.randFloat(9, 20);
 
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
@@ -130,7 +124,7 @@ export function updateHealthPacks(delta, player, healSound) {
             continue;
         }
 
-        // remove se ficar muito para trás (não foi coletado a tempo)
+        // remove se ficar muito para trás 
         if (pack.mesh.position.z < player.position.z - 100) {
             sceneRef.remove(pack.mesh);
             healthPacks.splice(i, 1);

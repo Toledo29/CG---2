@@ -1,14 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import Stats from '../build/jsm/libs/stats.module.js';
-import {
-  initRenderer,
-  setDefaultMaterial,
-  InfoBox,
-  onWindowResize,
-  createGroundPlaneWired
-} from "../libs/util/util.js";
-
+import { initRenderer, setDefaultMaterial, InfoBox, onWindowResize, createGroundPlaneWired } from "../libs/util/util.js";
 import { aviao, helice } from './aviao.js';
 import { initPlayerShooting, updatePlayerShooting, updatePlayerBullets, updateEnemyBullets } from './bullets.js';
 import { loadEnemyModel, updateEnemies } from './enemies.js';
@@ -21,6 +14,7 @@ import { createLights, updateDirectionalShadow } from './light.js';
 import { loadingManager } from './loadingManager.js';
 import { initPlayerState, isGameOver, healEnergy } from './playerState.js';
 import { initHealthPacks, updateHealthPacks } from './healthpacks.js';
+import { createWater, updateWater } from './water.js';
 import { createBackgroundSound, createBulletSound , createHealSound, createPlayerSound, createEnemySound } from './sound.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
@@ -85,6 +79,9 @@ const chunksAhead = 4;
 const chunksBehind = 1;
 const playerBoundingBox = new THREE.Box3();
 
+const water = createWater(planeWidth, planeDepth * (chunksAhead + chunksBehind + 4));
+scene.add(water);
+
 const createChunk = makeCreateChunk({
   planeWidth,
   planeDepth,
@@ -113,13 +110,9 @@ if (fogSlider) {
 
 updateChunks(aviao, planeDepth, chunks, chunksAhead, chunksBehind, createChunk, scene);
 
-// NOVO: inicializa HUD de vida/invencibilidade e o sistema de health packs
 initPlayerState();
 initHealthPacks(scene, healEnergy);
 
-// NOVO: tela de carregamento — acompanha o progresso real dos assets
-// (texturas do avião + modelo GLB dos inimigos) através do loadingManager
-// compartilhado entre aviao.js e enemies.js.
 const loadingScreen = document.getElementById('loadingScreen');
 const loadingBarFill = document.getElementById('loadingBarFill');
 const loadingPercentText = document.getElementById('loadingPercentText');
@@ -170,6 +163,7 @@ function render() {
   // NOVO: quando o jogo termina, para de atualizar a lógica (mas continua
   // renderizando o último frame, já que a tela de game over fica por cima)
   if (isGameOver()) {
+      updateWater(delta, aviao.position, light);
       renderer.render(scene, camera);
       return;
   }
@@ -208,6 +202,8 @@ function render() {
     light.updateMatrixWorld();
     light.target.updateMatrixWorld();
   }
+
+  updateWater(delta, aviao.position, light);
 
   renderer.render(scene, camera);
 }

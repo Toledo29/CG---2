@@ -1,20 +1,15 @@
 import * as THREE from 'three';
 import { loadingManager } from './loadingManager.js';
 
-// NOVO: TextureLoader ligado ao loadingManager compartilhado, para que a
-// tela de carregamento consiga acompanhar o progresso real do download
-// das texturas do avião.
+// tela de carregamento 
 const textureLoader = new THREE.TextureLoader(loadingManager);
 
-// NOVO: as 3 texturas do avião exigidas pelo T3.
-// Troque os nomes abaixo pelos arquivos que vocês baixaram (mantendo-os
-// dentro de "assets/textures/" no projeto — lembrem-se que Linux é
-// case sensitive!).
-const metalTexture = textureLoader.load('./assets/textures/aviao_metal.jpg');
-const paintedMetalTexture = textureLoader.load('./assets/textures/aviao_pintura.jpg');
-const carbonFiberTexture = textureLoader.load('./assets/textures/aviao_carbono.jpg');
+// texturas do avião exigidas pelo T3.
+const metalTexture = textureLoader.load('./assets/aviao_metal.jpg');
+const paintedMetalTexture = textureLoader.load('./assets/aviao_pintura.jpg');
+const metal2FiberTexture = textureLoader.load('./assets/aviao_metal2.jpg');
 
-[metalTexture, paintedMetalTexture, carbonFiberTexture].forEach((tex) => {
+[metalTexture, paintedMetalTexture, metal2FiberTexture].forEach((tex) => {
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     if ('colorSpace' in tex) {
@@ -25,7 +20,7 @@ const carbonFiberTexture = textureLoader.load('./assets/textures/aviao_carbono.j
 // ajusta a repetição da textura para não ficar esticada nos cilindros
 metalTexture.repeat.set(3, 1);
 paintedMetalTexture.repeat.set(2, 1);
-carbonFiberTexture.repeat.set(2, 1);
+metal2FiberTexture.repeat.set(2, 1);
 
 // cria o avião
 let aviao = new THREE.Group();
@@ -35,7 +30,7 @@ let corpoGeo = new THREE.CylinderGeometry( 0.3, 0.6, 4, 32 );
 let corpoMat = new THREE.MeshStandardMaterial({
     color: 0x888888,
     map: metalTexture, // NOVO: textura de metal rebitado (fuselagem)
-    metalness: 0.8,  // aspecto de alumínio
+    metalness: 0.4,  // aspecto de alumínio
     roughness: 0.2  // superfície mais lisa  
 });
 let corpo = new THREE.Mesh(corpoGeo, corpoMat);
@@ -47,7 +42,7 @@ let asaGeoDireita = new THREE.CylinderGeometry( 0.3, 0.5, 4, 10 );
 let asaMat = new THREE.MeshStandardMaterial({
     color: 0xffa500, 
     map: paintedMetalTexture, // NOVO: textura de metal pintado (asas)
-    metalness: 0.1,  
+    metalness: 0.4,  
     roughness: 0.4   
 });
 let asaDireita = new THREE.Mesh(asaGeoDireita, asaMat);
@@ -88,8 +83,8 @@ aviao.add(pontaEsquerda);
 let caudaGeo = new THREE.SphereGeometry( 0.3, 32, 16 );
 let caudaMat = new THREE.MeshStandardMaterial({
     color: 0x888888,
-    map: carbonFiberTexture, // NOVO: textura de fibra de carbono (cauda)
-    metalness: 0.8,  
+    map: metal2FiberTexture, // NOVO: textura de fibra de carbono (cauda)
+    metalness: 0.4,  
     roughness: 0.2   
 });
 let cauda = new THREE.Mesh(caudaGeo, caudaMat);

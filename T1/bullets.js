@@ -18,7 +18,6 @@ export function setPlayerShootInterval(v) {
     playerShootInterval = v;
 }
 
-// NOVO: ponto (x, y) para onde o player está mirando (mesmo alvo do reticulo),
 // atualizado a cada frame pelo cameraController.
 let aimX = 0;
 let aimY = 11.5;
@@ -28,11 +27,6 @@ export function setPlayerAimPoint(x, y) {
     aimY = y;
 }
 
-// NOVO: geometria/material compartilhados entre todos os tiros do player e
-// entre todos os tiros dos inimigos. Antes cada tiro criava um BoxGeometry/
-// ConeGeometry e um Material novos e depois os destruía (dispose) ao remover
-// o tiro — isso gera criação/descarte de buffers na GPU várias vezes por
-// segundo (até ~12x/s no modo rápido) e prejudica bastante o FPS.
 const playerBulletGeometry = new THREE.BoxGeometry(0.25, 0.25, 3.5);
 const playerBulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 
@@ -82,10 +76,6 @@ export function createPlayerBullet(bulletSound) {
     // sai da frente do avião
     mesh.position.z += 5;
 
-    // CORRIGIDO: antes a direção era sempre (0,0,1), ignorando o target.
-    // Agora calculamos a direção usando o ponto mirado pelo mouse (aimX, aimY),
-    // projetado bem à frente no eixo Z, para o tiro seguir de fato na direção
-    // do reticulo/target.
     const aimPoint = new THREE.Vector3(
         aimX,
         aimY,
@@ -218,10 +208,6 @@ function removeBullet(array, index) {
     const bullet = array[index];
 
     sceneRef.remove(bullet.mesh);
-
-    // NOTA: geometria e material agora são compartilhados entre todos os
-    // tiros, então NÃO podem ser "dispose"ados aqui — isso quebraria os
-    // outros tiros que ainda usam o mesmo geometry/material.
 
     array.splice(index, 1);
 }

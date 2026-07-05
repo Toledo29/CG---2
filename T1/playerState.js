@@ -1,6 +1,3 @@
-// Gerencia o estado de "vida" do avião do player: contagem de tiros
-// sofridos, modo invencibilidade (tecla 'G'), barra de vida gráfica e a
-// tela de fim de jogo com opção de reiniciar.
 
 const MAX_HITS = 20; // avião aguenta até 20 tiros (conforme enunciado)
 
@@ -65,7 +62,6 @@ export function takeDamage() {
     }
 }
 
-// percent: 0-100. Ex: healEnergy(25) recupera 25% da energia total (5 tiros)
 export function healEnergy(percent) {
 
     const hitsRecovered = Math.round((percent / 100) * MAX_HITS);

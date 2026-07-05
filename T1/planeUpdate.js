@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { spawnEnemiesForChunk } from './enemies.js';
-import { getTerrainHeight } from './terrain.js';
+import { getTerrainHeight, WATER_LEVEL } from './terrain.js';
 
 const _matrix = new THREE.Matrix4();
 const _quat = new THREE.Quaternion();
@@ -50,10 +50,6 @@ function removeChunk(chunkIndex, chunks, scene) {
     chunks.delete(chunkIndex);
 }
 
-// CORRIGIDO: recalcula a altura do terreno igual antes, mas agora as árvores
-// são InstancedMesh (ver trees.js), então em vez de mover cada "child.position"
-// individual, recalculamos a matriz de cada INSTÂNCIA usando os dados
-// (xs/zLocals/scales) salvos em userData na criação.
 function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
     const terrain = oldChunkGroup.children[0];
 
@@ -74,19 +70,30 @@ function recycleChunk(oldChunkGroup, newChunkIndex, chunkCenterZ) {
     terrain.geometry.computeBoundingSphere();
     terrain.geometry.computeBoundingBox();
 
-    // Recalcula a posição/altura de cada InstancedMesh de árvore
+    // Recalcula a posição de cada filho restante do chunk (água + árvores)
     for (let i = 1; i < oldChunkGroup.children.length; i++) {
 
-        const instancedMesh = oldChunkGroup.children[i];
+        const child = oldChunkGroup.children[i];
+
+        const instancedMesh = child;
         const { xs, zLocals, scales, yOffsetFactor } = instancedMesh.userData;
 
         for (let j = 0; j < xs.length; j++) {
 
             const worldZ = zLocals[j] + chunkCenterZ;
-            const groundY = getTerrainHeight(xs[j], worldZ) + 1.5 + yOffsetFactor * scales[j];
+            const groundHeight = getTerrainHeight(xs[j], worldZ);
 
-            _posVec.set(xs[j], groundY, worldZ);
-            _scaleVec.set(scales[j], scales[j], scales[j]);
+            const isUnderwater = groundHeight < WATER_LEVEL + 0.5;
+
+            if (isUnderwater) {
+                _posVec.set(xs[j], groundHeight, worldZ);
+                _scaleVec.set(0, 0, 0);
+            } else {
+                const groundY = groundHeight + 1.5 + yOffsetFactor * scales[j];
+                _posVec.set(xs[j], groundY, worldZ);
+                _scaleVec.set(scales[j], scales[j], scales[j]);
+            }
+
             _matrix.compose(_posVec, _quat, _scaleVec);
             instancedMesh.setMatrixAt(j, _matrix);
         }

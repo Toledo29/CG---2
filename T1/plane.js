@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { generateTreesForChunk } from './trees.js';
-import { createTerrain, getTerrainHeight } from './terrain.js';
+import { createTerrain, getTerrainHeight, WATER_LEVEL } from './terrain.js';
 
-// Factory that returns a createChunk function bound to provided dependencies
     function makeCreateChunk(deps) {
         const {
             planeWidth,
@@ -54,14 +53,15 @@ import { createTerrain, getTerrainHeight } from './terrain.js';
 
                 const y = getTerrainHeight(x, worldZ);
 
-                treePositions.push(
-                    new THREE.Vector3(x, y, zLocal)
-                );
+                if (y > WATER_LEVEL + 0.5) {
+                    treePositions.push(
+                        new THREE.Vector3(x, y, zLocal)
+                    );
+                }
             }
             attempts++;
         }
 
-        // after positions are generated, create tree meshes and add to chunk
         generateTreesForChunk(treePositions, chunkGroup, chunkCenterZ);
 
         scene.add(chunkGroup);

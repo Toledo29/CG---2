@@ -14,19 +14,12 @@ const coneLeafGeometry1 = new THREE.ConeGeometry(2, 2, 5);
 const coneLeafGeometry2 = new THREE.ConeGeometry(1.5, 2, 5);
 const coneLeafGeometry3 = new THREE.ConeGeometry(1, 2, 5);
 
-// objetos reutilizados a cada cálculo de matriz, evita criar lixo de memória
-// (garbage collection) toda hora, o que também ajuda o FPS
+
 const _matrix = new THREE.Matrix4();
-const _quat = new THREE.Quaternion(); // árvores não giram, fica identidade
+const _quat = new THREE.Quaternion(); 
 const _scaleVec = new THREE.Vector3();
 const _posVec = new THREE.Vector3();
 
-// CORRIGIDO (performance): antes cada árvore era um THREE.Mesh individual
-// com filhos (tronco + folhas), totalizando centenas/milhares de objetos
-// desenhados por frame — cada um custando uma "draw call" própria pra GPU.
-// Isso é a causa mais provável da queda de FPS que o professor notou.
-// Agora usamos THREE.InstancedMesh: todo tronco/folha do MESMO tipo em um
-// chunk é desenhado em UMA ÚNICA chamada, não importa se são 5 ou 5000.
 function generateTreesForChunk(treePositions, chunkGroup, chunkCenterZ) {
 
     const typeAPositions = []; // árvore com folha esférica
@@ -102,7 +95,7 @@ function generateTreesForChunk(treePositions, chunkGroup, chunkCenterZ) {
             mesh.userData.xs = [];
             mesh.userData.zLocals = [];
             mesh.userData.scales = [];
-            mesh.userData.yOffsetFactor = idx; // 0, 1, 2 (cones sobem)
+            mesh.userData.yOffsetFactor = idx; // 0, 1, 2 
         });
 
         typeBPositions.forEach((pos, i) => {
