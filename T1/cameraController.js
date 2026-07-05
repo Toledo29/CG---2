@@ -98,18 +98,18 @@ export function createCameraController(scene, renderer, aviao, opts = {}) {
   function setSpeedMode(mode) {
 
     if (mode === 1) {
-      currentSpeed = 0.08;
-      speedMultiplier = 0.6;
-      setEnemySpeedMultiplier(0.6);
+      currentSpeed = 1;
+      speedMultiplier = 1;
+      setEnemySpeedMultiplier(2);
       setEnemySpawnPairs(1);
       setBulletSpeed(120);
       setPlayerShootInterval(0.18);
     }
 
     if (mode === 2) {
-      currentSpeed = 0.45;
-      speedMultiplier = 1;
-      setEnemySpeedMultiplier(1);
+      currentSpeed = 1.2;
+      speedMultiplier = 1.3;
+      setEnemySpeedMultiplier(3);
       setEnemySpawnPairs(1);
       setBulletSpeed(180);
       setPlayerShootInterval(0.12);
