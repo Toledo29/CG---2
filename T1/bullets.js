@@ -58,7 +58,7 @@ export function initPlayerShooting(scene, camera, aviao) {
     });
 }
 
-export function updatePlayerShooting(delta) {
+export function updatePlayerShooting(delta, bulletSound) {
 
     if (!isShooting) return;
 
@@ -68,11 +68,11 @@ export function updatePlayerShooting(delta) {
 
         shootCooldown = 0;
 
-        createPlayerBullet();
+        createPlayerBullet(bulletSound);
     }
 }
 
-export function createPlayerBullet() {
+export function createPlayerBullet(bulletSound) {
 
     const mesh = new THREE.Mesh(playerBulletGeometry, playerBulletMaterial);
 
@@ -113,6 +113,12 @@ export function createPlayerBullet() {
         boundingBox: new THREE.Box3()
     };
 
+    if (bulletSound) {
+        if (bulletSound.isPlaying) {
+            bulletSound.stop();
+        }
+        bulletSound.play();
+    }
     sceneRef.add(mesh);
 
     playerBullets.push(bullet);

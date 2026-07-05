@@ -21,6 +21,7 @@ import { createLights, updateDirectionalShadow } from './light.js';
 import { loadingManager } from './loadingManager.js';
 import { initPlayerState, isGameOver, healEnergy } from './playerState.js';
 import { initHealthPacks, updateHealthPacks } from './healthpacks.js';
+import { createBackgroundSound, createBulletSound , createHealSound, createPlayerSound, createEnemySound } from './sound.js';
 
 let scene, renderer, camera, light, orbit;; // Inicializa Variáveis
 scene = new THREE.Scene();    // Cria cena
@@ -43,6 +44,13 @@ const cameraController = createCameraController(scene, renderer, aviao);
 camera = cameraController.camera;
 initPlayerShooting(scene, camera, aviao);
 loadEnemyModel(scene).catch((error) => console.error(error));
+
+const backgroundSound = createBackgroundSound(camera); // Inicializa o som de fundo
+const bulletSound = createBulletSound(camera); // Inicializa o som do tiro
+const healSound = createHealSound(camera); // Inicializa o som de cura
+const playerSound = createPlayerSound(camera); // Inicializa o som do player
+const enemySound = createEnemySound(camera); // Inicializa o som do inimigo
+
 
 // Cria Fog
 const fogColor = 0x87ceeb;
@@ -145,6 +153,11 @@ if (startButton) {
         if (gameStarted) return;
         gameStarted = true;
         if (loadingScreen) loadingScreen.style.display = 'none';
+
+        if (!backgroundSound.isPlaying) {
+            backgroundSound.play();
+        }
+
         render();
     });
 }
@@ -162,12 +175,12 @@ function render() {
   }
 
   cameraController.update(delta);
-  updatePlayerShooting(delta);
+  updatePlayerShooting(delta, bulletSound);
   updatePlayerBullets(delta);
   updateEnemyBullets(delta, aviao);
   updateEnemies(delta, aviao);
-  updateCollisions(aviao, playerBoundingBox);
-  updateHealthPacks(delta, aviao); // NOVO
+  updateCollisions(aviao, playerBoundingBox, playerSound, enemySound);
+  updateHealthPacks(delta, aviao, healSound); // NOVO
 
   const terrainHeight = getTerrainHeight(
     aviao.position.x,

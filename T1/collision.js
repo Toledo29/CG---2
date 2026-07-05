@@ -3,18 +3,18 @@ import { enemies } from './enemies.js';
 import { takeDamage, isInvincible, isGameOver } from './playerState.js';
 import { notifyEnemyKilled } from './healthpacks.js';
 
-export function updateCollisions(aviao, playerBoundingBox) {
+export function updateCollisions(aviao, playerBoundingBox , playerSound, enemySound) {
 
     if (isGameOver()) return;
 
     playerBoundingBox.setFromObject(aviao);
 
-    playerVsEnemyBullets(playerBoundingBox);
+    playerVsEnemyBullets(playerBoundingBox, playerSound);
 
-    playerBulletsVsEnemies(aviao);
+    playerBulletsVsEnemies(aviao, enemySound);
 }
 
-function playerVsEnemyBullets(playerBoundingBox) {
+function playerVsEnemyBullets(playerBoundingBox, playerSound) {
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
 
@@ -36,11 +36,17 @@ function playerVsEnemyBullets(playerBoundingBox) {
             // aqui, senão todos os próximos tiros ficam quebrados.
 
             enemyBullets.splice(i, 1);
+            if (playerSound) {
+                if (playerSound.isPlaying) {
+                    playerSound.stop();
+                }
+                playerSound.play();
+            }
         }
     }
 }
 
-function playerBulletsVsEnemies(player) {
+function playerBulletsVsEnemies(player, enemySound) {
 
     for (
         let i = playerBullets.length - 1;
@@ -84,7 +90,13 @@ function playerBulletsVsEnemies(player) {
                 // dispose() em geometria/material compartilhados.
 
                 playerBullets.splice(i, 1);
-
+                
+                if (enemySound) {
+                    if (enemySound.isPlaying) {
+                        enemySound.stop();
+                    }
+                    enemySound.play();
+                }
                 break;
             }
         }

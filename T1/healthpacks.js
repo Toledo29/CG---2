@@ -90,7 +90,7 @@ function spawnHealthPack(player) {
     });
 }
 
-export function updateHealthPacks(delta, player) {
+export function updateHealthPacks(delta, player, healSound) {
 
     for (let i = healthPacks.length - 1; i >= 0; i--) {
 
@@ -125,6 +125,7 @@ export function updateHealthPacks(delta, player) {
             if (onCollectCallback) {
                 onCollectCallback(ENERGY_RESTORE_PERCENT);
             }
+            healSound.play(); // toca o som de cura ao coletar o pack
 
             continue;
         }
