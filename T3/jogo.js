@@ -1,3 +1,8 @@
+// A implementação dos shaders segue a seuinte lógica:
+// Para a água é utilizado o shader do THREE.Water, que já implementa a reflexão e refração da água, além de simular o movimento das ondas.
+// Para o terreno, é utilizado um shader customizado que aplica uma textura de altura (heightmap) para criar a ilusão de relevo, além de aplicar uma textura de cor (colormap) para dar cor ao terreno.
+// O shader do terreno também implementa a iluminação baseada na posição do sol, que é simulada com uma luz direcional.
+// Modifica o shader padrão do THREE.MeshStandardMaterial usando onBeforeCompile
 import * as THREE from 'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import Stats from '../build/jsm/libs/stats.module.js';
